@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeadGen Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#08090d;--bg2:#0f1018;--bg3:#181923;--bg4:#1f2130;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);--text:#eeeef5;--muted:#7a7a9a;--accent:#4f8ef7;--accent2:#43e0a0;--accent-dim:rgba(79,142,247,0.13);--green:#43e0a0;--green-dim:rgba(67,224,160,0.12);--red:#f25c5c;--yellow:#f5c842;--head:'Syne',sans-serif;--body:'DM Sans',sans-serif;--mono:'DM Mono',monospace}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}body{background:var(--bg);color:var(--text);font-family:var(--body);min-height:100vh;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fadein{animation:fadein .25s ease forwards}
+
+/* HEADER */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:54px;border-bottom:1px solid var(--border);background:rgba(8,9,13,0.97);position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:9px;font-family:var(--head);font-weight:800;font-size:1.05rem;letter-spacing:-.02em}
+.logo-dot{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px}
+.hdr-r{display:flex;align-items:center;gap:10px}
+.plan-pill{border-radius:999px;padding:3px 12px;font-size:11px;font-family:var(--mono);border:1px solid}
+.plan-pill.free{background:var(--bg3);color:var(--muted);border-color:var(--border2)}
+.plan-pill.basic{background:var(--accent-dim);color:var(--accent);border-color:rgba(79,142,247,0.2)}
+.plan-pill.pro{background:rgba(245,200,66,0.1);color:var(--yellow);border-color:rgba(245,200,66,0.2)}
+.plan-pill.agency{background:var(--green-dim);color:var(--green);border-color:rgba(67,224,160,0.2)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;border-radius:7px;font-size:13px;font-family:var(--body);font-weight:500;cursor:pointer;border:none;transition:all .15s}
+.btn-p{background:var(--accent);color:#fff}.btn-p:hover{background:#6fa3f9}
+.btn-o{background:transparent;border:1px solid var(--border2);color:var(--text)}.btn-o:hover{background:var(--bg3)}
+.btn-g{background:var(--green-dim);color:var(--green);border:1px solid rgba(67,224,160,0.18)}.btn-g:hover{background:rgba(67,224,160,0.22)}
+.btn-d{background:rgba(242,92,92,0.1);color:var(--red);border:1px solid rgba(242,92,92,0.18)}
+.btn-lg{padding:12px 28px;font-size:14px;border-radius:10px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* AUTH PAGES */
+.auth-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:2rem}
+.auth-card{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:2.5rem;width:100%;max-width:420px}
+.auth-title{font-family:var(--head);font-size:1.6rem;font-weight:800;letter-spacing:-.02em;margin-bottom:.4rem}
+.auth-sub{color:var(--muted);font-size:13px;margin-bottom:1.8rem;line-height:1.6}
+.auth-field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.auth-field label{font-size:10px;color:var(--muted);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.auth-field input{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--body);font-size:13.5px;padding:10px 12px;outline:none;transition:border-color .15s}
+.auth-field input:focus{border-color:var(--accent)}
+.auth-err{background:rgba(242,92,92,0.1);border:1px solid rgba(242,92,92,0.2);border-radius:7px;padding:8px 12px;font-size:12.5px;color:var(--red);margin-bottom:12px;display:none}
+.auth-err.on{display:block}
+.auth-switch{text-align:center;margin-top:1.2rem;font-size:12.5px;color:var(--muted)}
+.auth-switch a{color:var(--accent);cursor:pointer;text-decoration:none}
+.auth-switch a:hover{text-decoration:underline}
+
+/* LANDING */
+.landing{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1.5rem;text-align:center}
+.landing-title{font-family:var(--head);font-size:clamp(2rem,5vw,3.5rem);font-weight:800;letter-spacing:-.03em;line-height:1.1;margin-bottom:1rem}
+.landing-title span{color:var(--accent)}
+.landing-sub{color:var(--muted);font-size:1rem;max-width:480px;line-height:1.7;margin-bottom:2rem}
+.landing-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:3rem}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:700px;width:100%}
+.feat{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.2rem;text-align:left}
+.feat-ic{font-size:1.4rem;margin-bottom:.6rem}
+.feat-t{font-weight:500;font-size:.9rem;margin-bottom:.3rem}
+.feat-s{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* PRICING PAGE */
+.pricing-wrap{flex:1;padding:2rem 1.5rem;max-width:860px;margin:0 auto;width:100%}
+.pricing-title{font-family:var(--head);font-size:1.8rem;font-weight:800;letter-spacing:-.02em;margin-bottom:.5rem}
+.pricing-sub{color:var(--muted);font-size:13.5px;margin-bottom:2rem}
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.price-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:1.5rem;position:relative;transition:border-color .2s}
+.price-card:hover{border-color:var(--border2)}
+.price-card.popular{border-color:var(--accent)}
+.popular-badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:10px;font-weight:600;padding:2px 12px;border-radius:999px;font-family:var(--mono);white-space:nowrap}
+.price-name{font-size:11px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem}
+.price-amount{font-family:var(--head);font-size:2.4rem;font-weight:800;margin-bottom:.2rem}
+.price-amount span{font-size:14px;font-weight:400;color:var(--muted)}
+.price-desc{font-size:12.5px;color:var(--muted);margin-bottom:1.2rem;line-height:1.6}
+.price-features{list-style:none;margin-bottom:1.4rem}
+.price-features li{font-size:12.5px;color:var(--muted);padding:4px 0;display:flex;align-items:center;gap:7px}
+.price-features li::before{content:'✓';color:var(--green);font-size:11px;font-weight:700}
+
+/* DASHBOARD */
+.app{display:flex;flex:1;overflow:hidden}
+.side{width:220px;min-width:220px;border-right:1px solid var(--border);padding:1.2rem .8rem;display:flex;flex-direction:column;gap:2px}
+.slbl{font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:.08em;text-transform:uppercase;padding:8px 8px 3px;margin-top:6px}
+.nav{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:7px;font-size:13px;color:var(--muted);cursor:pointer;transition:all .1s;user-select:none}
+.nav:hover{background:var(--bg3);color:var(--text)}
+.nav.on{background:var(--accent-dim);color:var(--accent);font-weight:500}
+.nav .ic{width:16px;text-align:center;font-size:13px}
+.nb{margin-left:auto;background:var(--bg4);border-radius:999px;padding:1px 7px;font-size:10px;font-family:var(--mono);color:var(--muted)}
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.view{display:none;flex:1;flex-direction:column;overflow:hidden}
+.view.on{display:flex}
+.spanel{padding:1.2rem 1.5rem;border-bottom:1px solid var(--border)}
+.ptitle{font-family:var(--head);font-size:1.3rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.9rem}
+.sgrid{display:grid;grid-template-columns:1fr 1fr 1fr 130px;gap:8px;align-items:end}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld label{font-size:10px;color:var(--muted);font-family:var(--mono);letter-spacing:.05em;text-transform:uppercase}
+.fld input,.fld select{background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--body);font-size:13px;padding:7px 10px;outline:none;transition:border-color .15s;height:36px}
+.fld input:focus,.fld select:focus{border-color:var(--accent)}
+.fld select option{background:var(--bg3)}
+.ra{flex:1;overflow-y:auto;padding:1.2rem 1.5rem}
+.rhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem}
+.rc{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.ract{display:flex;gap:7px;align-items:center}
+
+/* PAYWALL BANNER */
+.paywall{background:linear-gradient(135deg,rgba(79,142,247,0.1),rgba(67,224,160,0.08));border:1px solid rgba(79,142,247,0.2);border-radius:12px;padding:1.5rem;margin-bottom:1.2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.paywall-t{font-family:var(--head);font-size:1rem;font-weight:700;margin-bottom:.3rem}
+.paywall-s{font-size:12.5px;color:var(--muted)}
+
+/* ERROR / PROGRESS */
+.eb{background:rgba(242,92,92,0.1);border:1px solid rgba(242,92,92,0.2);border-radius:8px;padding:.6rem 1rem;margin-bottom:.9rem;font-size:12px;color:var(--red);display:none}
+.eb.on{display:block}
+.prog{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:.9rem 1.2rem;margin-bottom:1.2rem;display:none}
+.prog.on{display:block}
+.plbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:7px;font-family:var(--mono)}
+.ptrack{height:3px;background:var(--bg4);border-radius:2px;overflow:hidden}
+.pfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;width:0%;transition:width .4s ease}
+
+/* TABLE */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:800px}
+thead th{text-align:left;font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;background:var(--bg);z-index:1}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer}
+tbody tr:hover{background:var(--bg3)}
+tbody tr.sel{background:var(--accent-dim)}
+td{padding:9px 10px;font-size:12.5px;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+td.nm{font-weight:500;color:var(--text)}td.mu{color:var(--muted)}td.lk{color:var(--accent)}
+td.lk a{color:inherit;text-decoration:none}td.lk a:hover{text-decoration:underline}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-family:var(--mono);font-weight:500}
+.ph{background:var(--green-dim);color:var(--green)}.pm{background:rgba(245,200,66,0.12);color:var(--yellow)}.pl{background:rgba(242,92,92,0.1);color:var(--red)}
+
+/* EMPTY */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3.5rem 2rem;text-align:center;gap:10px}
+.et{font-family:var(--head);font-size:1.1rem;font-weight:700}
+.es{color:var(--muted);font-size:13px;max-width:300px;line-height:1.6}
+
+/* DRAWER */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200}
+.ov.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:420px;background:var(--bg2);border-left:1px solid var(--border2);z-index:201;overflow-y:auto;padding:1.3rem;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+.drawer.on{transform:translateX(0)}
+.dh{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.3rem}
+.dt{font-family:var(--head);font-size:1.1rem;font-weight:700}
+.ds{color:var(--muted);font-size:12px;margin-top:2px}
+.cls{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--muted);padding:3px 9px;cursor:pointer;font-size:12px}
+.dsec{margin-bottom:1.3rem}
+.dst{font-size:9px;font-family:var(--mono);color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.drow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);gap:10px}
+.drow:last-child{border-bottom:none}
+.dk{font-size:11px;color:var(--muted);min-width:90px}
+.dv{font-size:11.5px;color:var(--text);text-align:right;word-break:break-all;font-family:var(--mono)}
+.dv.lk{color:var(--accent)}
+.notes{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 10px;width:100%;color:var(--text);font-family:var(--body);font-size:12.5px;min-height:70px;resize:vertical;outline:none}
+.notes:focus{border-color:var(--accent)}
+
+/* MODAL */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:300;align-items:center;justify-content:center}
+.mo.on{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:1.8rem;width:460px;max-width:95vw;animation:fadein .2s ease}
+.mt{font-family:var(--head);font-size:1.1rem;font-weight:700;margin-bottom:.4rem}
+.ms{color:var(--muted);font-size:12.5px;margin-bottom:1.3rem}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.3rem}
+.pc{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:.9rem;cursor:pointer;transition:all .15s}
+.pc:hover{border-color:var(--accent)}.pc.on{border-color:var(--accent);background:var(--accent-dim)}
+.pc .tier{font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.pc .amt{font-family:var(--head);font-size:1.5rem;font-weight:800;margin:3px 0}
+.pc .dets{font-size:11.5px;color:var(--muted)}
+.mac{display:flex;justify-content:flex-end;gap:8px}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;padding:10px 16px;font-size:12.5px;z-index:999;transform:translateY(16px);opacity:0;transition:all .22s;display:flex;align-items:center;gap:8px}
+.toast.on{transform:translateY(0);opacity:1}
+.tdot{width:7px;height:7px;border-radius:50%}
+.tdot.s{background:var(--green)}.tdot.i{background:var(--accent)}.tdot.e{background:var(--red)}
+
+@media(max-width:768px){.side{display:none}.sgrid{grid-template-columns:1fr 1fr}.pricing-grid{grid-template-columns:1fr}.features{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="logo"><div class="logo-dot">⚡</div>LeadGen Pro</div>
+  <div class="hdr-r" id="hdrRight">
+    <button class="btn btn-o" onclick="showPage('login')" id="btnLogin">Log in</button>
+    <button class="btn btn-p" onclick="showPage('signup')" id="btnSignup">Get started</button>
+  </div>
+</header>
+
+<!-- ── LANDING ───────────────────────────────────────────────────────────── -->
+<div id="page-landing" class="fadein">
+  <div class="landing">
+    <div class="landing-title">Find real business leads<br><span>in seconds</span></div>
+    <div class="landing-sub">Search any business type in any city. Get real phone numbers, websites, addresses and ratings — ready to export to CSV.</div>
+    <div class="landing-btns">
+      <button class="btn btn-p btn-lg" onclick="showPage('signup')">Start free →</button>
+      <button class="btn btn-o btn-lg" onclick="showPage('pricing')">See pricing</button>
+    </div>
+    <div class="features">
+      <div class="feat"><div class="feat-ic">📍</div><div class="feat-t">Google Maps data</div><div class="feat-s">Real businesses pulled live from Google Maps</div></div>
+      <div class="feat"><div class="feat-ic">📊</div><div class="feat-t">Lead scoring</div><div class="feat-s">Every lead scored 0–100 based on rating and reviews</div></div>
+      <div class="feat"><div class="feat-ic">💾</div><div class="feat-t">CSV export</div><div class="feat-s">Export leads to CSV and share with clients</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PRICING ───────────────────────────────────────────────────────────── -->
+<div id="page-pricing" style="display:none">
+  <div class="pricing-wrap fadein">
+    <div class="pricing-title">Simple pricing</div>
+    <div class="pricing-sub">Start free. Upgrade when you need more leads.</div>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-name">Basic</div>
+        <div class="price-amount">$29<span>/mo</span></div>
+        <div class="price-desc">For freelancers getting started with lead gen</div>
+        <ul class="price-features">
+          <li>50 lead exports/month</li>
+          <li>Google Maps data</li>
+          <li>CSV download</li>
+          <li>Lead scoring</li>
+        </ul>
+        <button class="btn btn-o" style="width:100%" onclick="showPage('signup')">Get started</button>
+      </div>
+      <div class="price-card popular">
+        <div class="popular-badge">Most popular</div>
+        <div class="price-name">Pro</div>
+        <div class="price-amount">$79<span>/mo</span></div>
+        <div class="price-desc">For agencies running multiple campaigns</div>
+        <ul class="price-features">
+          <li>200 lead exports/month</li>
+          <li>Google Maps data</li>
+          <li>CSV download</li>
+          <li>Lead scoring + notes</li>
+          <li>Priority support</li>
+        </ul>
+        <button class="btn btn-p" style="width:100%" onclick="showPage('signup')">Get started</button>
+      </div>
+      <div class="price-card">
+        <div class="price-name">Agency</div>
+        <div class="price-amount">$199<span>/mo</span></div>
+        <div class="price-desc">For teams with unlimited lead needs</div>
+        <ul class="price-features">
+          <li>Unlimited exports</li>
+          <li>Google Maps data</li>
+          <li>CSV download</li>
+          <li>Lead scoring + notes</li>
+          <li>White-label CSV</li>
+          <li>API access</li>
+        </ul>
+        <button class="btn btn-o" style="width:100%" onclick="showPage('signup')">Get started</button>
+      </div>
+    </div>
+    <p style="text-align:center;margin-top:1.5rem;font-size:12.5px;color:var(--muted)">All plans include a 5-search free trial. Cancel anytime.</p>
+  </div>
+</div>
+
+<!-- ── LOGIN ─────────────────────────────────────────────────────────────── -->
+<div id="page-login" style="display:none">
+  <div class="auth-wrap">
+    <div class="auth-card fadein">
+      <div class="auth-title">Welcome back</div>
+      <div class="auth-sub">Log in to your LeadGen Pro account</div>
+      <div class="auth-err" id="loginErr"></div>
+      <div class="auth-field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@email.com"></div>
+      <div class="auth-field"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
+      <button class="btn btn-p" style="width:100%;justify-content:center;padding:10px" onclick="doLogin()" id="loginBtn">Log in</button>
+      <div class="auth-switch">Don't have an account? <a onclick="showPage('signup')">Sign up free</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SIGNUP ────────────────────────────────────────────────────────────── -->
+<div id="page-signup" style="display:none">
+  <div class="auth-wrap">
+    <div class="auth-card fadein">
+      <div class="auth-title">Get started free</div>
+      <div class="auth-sub">Create your account — no credit card required</div>
+      <div class="auth-err" id="signupErr"></div>
+      <div class="auth-field"><label>Email</label><input type="email" id="signupEmail" placeholder="you@email.com"></div>
+      <div class="auth-field"><label>Password</label><input type="password" id="signupPass" placeholder="At least 6 characters"></div>
+      <button class="btn btn-p" style="width:100%;justify-content:center;padding:10px" onclick="doSignup()" id="signupBtn">Create account</button>
+      <div class="auth-switch">Already have an account? <a onclick="showPage('login')">Log in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── DASHBOARD ─────────────────────────────────────────────────────────── -->
+<div id="page-dashboard" style="display:none;flex:1;flex-direction:column;overflow:hidden">
+  <div class="app">
+    <nav class="side">
+      <div class="slbl">Search</div>
+      <div class="nav on" id="nav-search" onclick="showView('search',this)"><span class="ic">🔍</span>Find Leads</div>
+      <div class="nav" id="nav-saved" onclick="showView('saved',this)"><span class="ic">📋</span>Saved<span class="nb" id="savedBadge">0</span></div>
+      <div class="slbl">Account</div>
+      <div class="nav" id="nav-upgrade" onclick="showView('upgrade',this)"><span class="ic">⚡</span>Upgrade</div>
+      <div class="nav" onclick="doLogout()"><span class="ic">🚪</span>Log out</div>
+    </nav>
+    <div class="main">
+
+      <!-- SEARCH VIEW -->
+      <div class="view on" id="view-search">
+        <div class="spanel">
+          <div class="ptitle">Find Real Businesses</div>
+          <div class="sgrid">
+            <div class="fld"><label>Business Type</label><input id="q" type="text" placeholder="dentist, plumber, gym…"></div>
+            <div class="fld"><label>City / Location</label><input id="loc" type="text" placeholder="Miami FL, Austin TX…"></div>
+            <div class="fld"><label>Min Rating</label>
+              <select id="minR"><option value="0">Any rating</option><option value="3">3+ stars</option><option value="4">4+ stars</option><option value="4.5">4.5+ stars</option></select>
+            </div>
+            <div class="fld"><label>&nbsp;</label><button class="btn btn-p" onclick="runSearch()" style="width:100%">🔍 Search</button></div>
+          </div>
+        </div>
+        <div class="ra">
+          <div class="eb" id="eb"></div>
+          <div class="prog" id="pw"><div class="plbl"><span id="ptxt">Searching…</span><span id="ppct">0%</span></div><div class="ptrack"><div class="pfill" id="pfill"></div></div></div>
+          <div class="rhdr" id="rhdr" style="display:none">
+            <div class="rc" id="rc">0 leads</div>
+            <div class="ract">
+              <button class="btn btn-o" style="font-size:11px;padding:5px 11px" onclick="selAll()">Select All</button>
+              <button class="btn btn-g" style="font-size:11px;padding:5px 11px" onclick="saveSelected()">💾 Save</button>
+              <button class="btn btn-p" style="font-size:11px;padding:5px 11px" onclick="openExport()">↓ Export CSV</button>
+            </div>
+          </div>
+          <div id="es" class="empty"><div style="font-size:2.5rem">🎯</div><div class="et">Find your next clients</div><div class="es">Enter a business type and city above to pull real leads from Google Maps.</div></div>
+          <div class="tw" id="tw" style="display:none">
+            <table>
+              <thead><tr>
+                <th style="width:32px"><input type="checkbox" id="mc" onchange="toggleAll(this)" style="accent-color:var(--accent);cursor:pointer"></th>
+                <th>Business Name</th><th>Category</th><th>Phone</th><th>Website</th><th>Address</th><th>Rating</th><th>Score</th><th></th>
+              </tr></thead>
+              <tbody id="lb"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SAVED VIEW -->
+      <div class="view" id="view-saved">
+        <div class="spanel"><div class="ptitle">Saved Leads</div></div>
+        <div class="ra">
+          <div class="rhdr"><div class="rc" id="sc3">0 leads</div><div class="ract"><button class="btn btn-p" style="font-size:11px;padding:5px 11px" onclick="exportSaved()">↓ Export All</button></div></div>
+          <div id="se2" class="empty"><div style="font-size:2.5rem">📋</div><div class="et">No saved leads</div><div class="es">Search and save leads here.</div></div>
+          <div class="tw" id="st" style="display:none">
+            <table><thead><tr><th></th><th>Business Name</th><th>Category</th><th>Phone</th><th>Website</th><th>Address</th><th>Rating</th><th>Score</th><th></th></tr></thead><tbody id="sb"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- UPGRADE VIEW -->
+      <div class="view" id="view-upgrade">
+        <div class="spanel"><div class="ptitle">Upgrade your plan</div></div>
+        <div class="ra">
+          <div id="upgradeContent"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- DRAWER -->
+<div class="ov" id="ov" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="dh"><div><div class="dt" id="drT">—</div><div class="ds" id="drS">—</div></div><button class="cls" onclick="closeDrawer()">✕</button></div>
+  <div class="dsec"><div class="dst">Contact</div><div id="drC"></div></div>
+  <div class="dsec"><div class="dst">Details</div><div id="drD"></div></div>
+  <div class="dsec"><div class="dst">Notes</div><textarea class="notes" id="drN" placeholder="Add notes…"></textarea></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-g" onclick="saveCurrent()" style="flex:1">💾 Save</button>
+    <button class="btn btn-o" onclick="closeDrawer()" style="flex:1">Close</button>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="mo" id="mo">
+  <div class="modal">
+    <div class="mt">Export to CSV</div>
+    <div class="ms" id="exportMs">Download your leads.</div>
+    <div id="exportBody"></div>
+    <div class="mac"><button class="btn btn-o" onclick="closeMo()">Cancel</button><button class="btn btn-p" id="exportBtn" onclick="doExport()">↓ Download</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="tdot s" id="tdot"></div><span id="tmsg"></span></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+const G = {
+  leads:[], saved:[], sel:new Set(), cur:null,
+  token:localStorage.getItem('token'),
+  user: JSON.parse(localStorage.getItem('user')||'null'),
+  exportLimit:0
+};
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  if (G.token && G.user) {
+    showDashboard();
+    // Check for upgrade success
+    if (location.search.includes('upgraded=true')) {
+      refreshUser();
+      showToast('Plan upgraded successfully!', 's');
+      history.replaceState({}, '', '/');
+    }
+  } else {
+    showPage('landing');
+  }
+});
+
+// ── AUTH ───────────────────────────────────────────────────────────────────
+async function doSignup() {
+  const email = document.getElementById('signupEmail').value.trim();
+  const password = document.getElementById('signupPass').value;
+  const btn = document.getElementById('signupBtn');
+  const err = document.getElementById('signupErr');
+  err.classList.remove('on');
+  if (!email || !password) { showErr(err, 'Please fill in all fields'); return; }
+  btn.disabled = true; btn.textContent = 'Creating account…';
+  try {
+    const res = await api('/api/signup', 'POST', { email, password });
+    if (res.error) { showErr(err, res.error); return; }
+    setSession(res);
+    showDashboard();
+    showToast('Account created! Welcome to LeadGen Pro', 's');
+  } catch(e) { showErr(err, 'Network error — try again'); }
+  finally { btn.disabled = false; btn.textContent = 'Create account'; }
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPass').value;
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginErr');
+  err.classList.remove('on');
+  btn.disabled = true; btn.textContent = 'Logging in…';
+  try {
+    const res = await api('/api/login', 'POST', { email, password });
+    if (res.error) { showErr(err, res.error); return; }
+    setSession(res);
+    showDashboard();
+    showToast('Welcome back!', 's');
+  } catch(e) { showErr(err, 'Network error — try again'); }
+  finally { btn.disabled = false; btn.textContent = 'Log in'; }
+}
+
+function doLogout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  G.token = null; G.user = null;
+  showPage('landing');
+}
+
+function setSession(data) {
+  G.token = data.token;
+  G.user = { email: data.email, plan: data.plan, planLabel: data.planLabel, limits: data.limits };
+  localStorage.setItem('token', data.token);
+  localStorage.setItem('user', JSON.stringify(G.user));
+}
+
+async function refreshUser() {
+  const res = await api('/api/me', 'GET');
+  if (!res.error) {
+    G.user = { ...G.user, plan: res.plan, planLabel: res.planLabel, limits: res.limits };
+    localStorage.setItem('user', JSON.stringify(G.user));
+    updatePlanUI();
+  }
+}
+
+function showErr(el, msg) { el.textContent = msg; el.classList.add('on'); }
+
+// ── DASHBOARD ──────────────────────────────────────────────────────────────
+function showDashboard() {
+  hideAllPages();
+  const d = document.getElementById('page-dashboard');
+  d.style.display = 'flex';
+  updatePlanUI();
+}
+
+function updatePlanUI() {
+  const plan = G.user?.plan || 'free';
+  const hdrRight = document.getElementById('hdrRight');
+  hdrRight.innerHTML = `
+    <span class="plan-pill ${plan}">${G.user?.planLabel || 'Free'}</span>
+    <span style="font-size:12px;color:var(--muted)">${G.user?.email}</span>
+  `;
+  renderUpgradeView();
+}
+
+function renderUpgradeView() {
+  const plan = G.user?.plan || 'free';
+  const plans = [
+    { id:'basic', name:'Basic', price:29, features:['50 exports/month','Google Maps data','CSV download'] },
+    { id:'pro', name:'Pro', price:79, features:['200 exports/month','Google Maps data','CSV + notes','Priority support'] },
+    { id:'agency', name:'Agency', price:199, features:['Unlimited exports','Google Maps data','White-label CSV','API access'] }
+  ];
+  document.getElementById('upgradeContent').innerHTML = `
+    <p style="color:var(--muted);font-size:13px;margin-bottom:1.5rem">Current plan: <strong style="color:var(--text)">${G.user?.planLabel}</strong>${plan==='free'?' — upgrade to export leads':' — thanks for subscribing!'}</p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:700px">
+      ${plans.map(p => `
+        <div style="background:var(--bg3);border:1px solid ${plan===p.id?'var(--accent)':'var(--border)'};border-radius:12px;padding:1.3rem">
+          <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">${p.name}</div>
+          <div style="font-family:var(--head);font-size:1.8rem;font-weight:800;margin-bottom:.8rem">$${p.price}<span style="font-size:12px;font-weight:400;color:var(--muted)">/mo</span></div>
+          <ul style="list-style:none;margin-bottom:1rem">${p.features.map(f=>`<li style="font-size:12px;color:var(--muted);padding:3px 0;display:flex;align-items:center;gap:6px"><span style="color:var(--green);font-size:10px">✓</span>${f}</li>`).join('')}</ul>
+          ${plan===p.id
+            ? `<div style="background:var(--accent-dim);color:var(--accent);border-radius:7px;padding:7px;text-align:center;font-size:12px;font-weight:500">Current plan</div>`
+            : `<button class="btn btn-p" style="width:100%;justify-content:center;font-size:12px" onclick="startCheckout('${p.id}')">Upgrade to ${p.name}</button>`
+          }
+        </div>`).join('')}
+    </div>`;
+}
+
+// ── STRIPE CHECKOUT ────────────────────────────────────────────────────────
+async function startCheckout(plan) {
+  showToast('Redirecting to checkout…', 'i');
+  const res = await api('/api/create-checkout', 'POST', { plan });
+  if (res.error) { showToast('Checkout error: ' + res.error, 'e'); return; }
+  window.location.href = res.url;
+}
+
+// ── SEARCH ─────────────────────────────────────────────────────────────────
+async function runSearch() {
+  const q = document.getElementById('q').value.trim();
+  const loc = document.getElementById('loc').value.trim();
+  const minR = parseFloat(document.getElementById('minR').value);
+  if (!q || !loc) { showToast('Enter a business type and city', 'i'); return; }
+
+  document.getElementById('es').style.display = 'none';
+  document.getElementById('tw').style.display = 'none';
+  document.getElementById('rhdr').style.display = 'none';
+  document.getElementById('eb').classList.remove('on');
+
+  const pw = document.getElementById('pw');
+  pw.classList.add('on');
+  setProg(20, 'Searching Google Maps…');
+
+  try {
+    const res = await api(`/api/search?q=${encodeURIComponent(q)}&loc=${encodeURIComponent(loc)}&limit=50`, 'GET');
+    setProg(100, 'Done!');
+
+    if (res.error) { pw.classList.remove('on'); showEb(res.error); return; }
+
+    let leads = res.leads || [];
+    if (minR > 0) leads = leads.filter(l => l.rating >= minR);
+    G.leads = leads;
+    G.sel.clear();
+    G.exportLimit = res.exportLimit || 0;
+
+    setTimeout(() => {
+      pw.classList.remove('on');
+      if (res.errors?.length) showEb('Note: ' + res.errors.join(' | '));
+      leads.length ? renderLeads() : showEmpty('No results found', 'Try a different search term or city.');
+    }, 300);
+
+  } catch(e) {
+    pw.classList.remove('on');
+    showEb('Search failed: ' + e.message);
+  }
+}
+
+function setProg(p, t) {
+  document.getElementById('pfill').style.width = p + '%';
+  document.getElementById('ppct').textContent = p + '%';
+  document.getElementById('ptxt').textContent = t;
+}
+function showEb(m) { const b = document.getElementById('eb'); b.textContent = '⚠ ' + m; b.classList.add('on'); }
+function showEmpty(t, s) {
+  const e = document.getElementById('es');
+  e.style.display = 'flex';
+  e.querySelector('.et').textContent = t;
+  e.querySelector('.es').textContent = s;
+}
+
+// ── RENDER ─────────────────────────────────────────────────────────────────
+function psc(s) { return s >= 70 ? 'ph' : s >= 40 ? 'pm' : 'pl'; }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function renderLeads() {
+  document.getElementById('lb').innerHTML = G.leads.map(l => `
+    <tr class="${G.sel.has(l.id)?'sel':''}" onclick="openD('${esc(l.id)}')">
+      <td onclick="event.stopPropagation()"><input type="checkbox" ${G.sel.has(l.id)?'checked':''} style="accent-color:var(--accent);cursor:pointer" onchange="toggleSel('${esc(l.id)}',this)"></td>
+      <td class="nm">${esc(l.name)}</td>
+      <td class="mu">${esc(l.cat)}</td>
+      <td class="mu">${esc(l.phone)||'—'}</td>
+      <td class="lk">${l.website?`<a href="${esc(l.website)}" target="_blank" onclick="event.stopPropagation()">${esc(l.website.replace(/^https?:\/\//,'').slice(0,24))}</a>`:'—'}</td>
+      <td class="mu" title="${esc(l.address)}">${esc(l.address.slice(0,28))}${l.address.length>28?'…':''}</td>
+      <td class="mu">${l.rating?l.rating+'★':'—'}</td>
+      <td><span class="pill ${psc(l.score)}">${l.score}</span></td>
+      <td><button class="btn btn-g" style="padding:3px 9px;font-size:10px" onclick="event.stopPropagation();quickSave('${esc(l.id)}')">Save</button></td>
+    </tr>`).join('');
+  document.getElementById('tw').style.display = 'block';
+  document.getElementById('rhdr').style.display = 'flex';
+  document.getElementById('rc').textContent = `${G.leads.length} businesses found`;
+}
+
+// ── SELECT / SAVE ──────────────────────────────────────────────────────────
+function toggleSel(id, cb) { if(cb.checked) G.sel.add(id); else G.sel.delete(id); renderLeads(); }
+function toggleAll(cb) { if(cb.checked) G.leads.forEach(l=>G.sel.add(l.id)); else G.sel.clear(); renderLeads(); }
+function selAll() { if(G.sel.size===G.leads.length) G.sel.clear(); else G.leads.forEach(l=>G.sel.add(l.id)); renderLeads(); }
+
+function quickSave(id) {
+  const l = G.leads.find(x=>x.id===id);
+  if (l && !G.saved.find(x=>x.id===id)) {
+    G.saved.push(l);
+    document.getElementById('savedBadge').textContent = G.saved.length;
+    showToast('Saved!', 's'); renderSaved();
+  }
+}
+function saveSelected() {
+  let n = 0;
+  G.sel.forEach(id => { const l = G.leads.find(x=>x.id===id); if(l&&!G.saved.find(x=>x.id===id)){G.saved.push(l);n++;} });
+  document.getElementById('savedBadge').textContent = G.saved.length;
+  showToast(`${n} leads saved`, 's'); renderSaved();
+}
+function saveCurrent() { if(!G.cur) return; G.cur.notes = document.getElementById('drN').value; quickSave(G.cur.id); closeDrawer(); }
+
+// ── DRAWER ─────────────────────────────────────────────────────────────────
+function openD(id) {
+  const l = G.leads.find(x=>x.id===id)||G.saved.find(x=>x.id===id);
+  if(!l) return; G.cur = l;
+  document.getElementById('drT').textContent = l.name;
+  document.getElementById('drS').textContent = `${l.cat} · ${l.city}`;
+  document.getElementById('drC').innerHTML = dr([['Phone',l.phone||'—',null],['Website',l.website?l.website.replace(/^https?:\/\//,''):'—',l.website],['Address',l.address||'—',null]]);
+  document.getElementById('drD').innerHTML = dr([['Rating',l.rating?`${l.rating}★ (${(l.reviews||0).toLocaleString()} reviews)`:'—',null],['Score',`${l.score}/100`,null],['Hours',l.hours||'—',null]]);
+  document.getElementById('drN').value = l.notes||'';
+  document.getElementById('drawer').classList.add('on');
+  document.getElementById('ov').classList.add('on');
+}
+function dr(rows) { return rows.map(([k,v,lnk])=>`<div class="drow"><span class="dk">${k}</span><span class="dv ${lnk?'lk':''}">${lnk?`<a href="${esc(lnk)}" target="_blank">${esc(v)}</a>`:esc(v)}</span></div>`).join(''); }
+function closeDrawer() { document.getElementById('drawer').classList.remove('on'); document.getElementById('ov').classList.remove('on'); }
+
+// ── SAVED ──────────────────────────────────────────────────────────────────
+function renderSaved() {
+  const w = document.getElementById('st'), e = document.getElementById('se2');
+  document.getElementById('sc3').textContent = G.saved.length + ' leads';
+  if(!G.saved.length){w.style.display='none';e.style.display='flex';return;}
+  e.style.display='none'; w.style.display='block';
+  document.getElementById('sb').innerHTML = G.saved.map(l=>`
+    <tr onclick="openD('${esc(l.id)}')"><td></td><td class="nm">${esc(l.name)}</td><td class="mu">${esc(l.cat)}</td><td class="mu">${esc(l.phone)||'—'}</td>
+    <td class="lk">${l.website?`<a href="${esc(l.website)}" target="_blank" onclick="event.stopPropagation()">${esc(l.website.replace(/^https?:\/\//,'').slice(0,22))}</a>`:'—'}</td>
+    <td class="mu">${esc(l.address.slice(0,26))}</td><td class="mu">${l.rating?l.rating+'★':'—'}</td>
+    <td><span class="pill ${psc(l.score)}">${l.score}</span></td>
+    <td><button class="btn btn-d" style="padding:3px 9px;font-size:10px" onclick="event.stopPropagation();remSaved('${esc(l.id)}')">Remove</button></td></tr>`).join('');
+}
+function remSaved(id) { G.saved = G.saved.filter(l=>l.id!==id); document.getElementById('savedBadge').textContent = G.saved.length; renderSaved(); }
+
+// ── EXPORT ─────────────────────────────────────────────────────────────────
+function openExport() {
+  const plan = G.user?.plan || 'free';
+  const limit = G.exportLimit;
+  const pool = G.sel.size > 0 ? G.leads.filter(l=>G.sel.has(l.id)) : G.leads;
+
+  if (plan === 'free') {
+    document.getElementById('exportMs').textContent = 'Upgrade to export leads to CSV.';
+    document.getElementById('exportBody').innerHTML = `
+      <div style="background:var(--accent-dim);border:1px solid rgba(79,142,247,0.2);border-radius:10px;padding:1.2rem;margin-bottom:1rem;text-align:center">
+        <div style="font-family:var(--head);font-size:1rem;font-weight:700;margin-bottom:.4rem">Free plan — export locked</div>
+        <div style="font-size:12.5px;color:var(--muted);margin-bottom:1rem">Upgrade to Basic ($29/mo) to export up to 50 leads per month.</div>
+        <button class="btn btn-p" onclick="closeMo();showView('upgrade',document.getElementById('nav-upgrade'))">View plans →</button>
+      </div>`;
+    document.getElementById('exportBtn').style.display = 'none';
+  } else {
+    document.getElementById('exportMs').textContent = `Exporting ${Math.min(pool.length, limit)} of ${pool.length} leads (${G.user?.planLabel} limit: ${limit}).`;
+    document.getElementById('exportBody').innerHTML = '';
+    document.getElementById('exportBtn').style.display = 'inline-flex';
+  }
+  document.getElementById('mo').classList.add('on');
+}
+
+function closeMo() { document.getElementById('mo').classList.remove('on'); }
+
+function doExport() {
+  const limit = G.exportLimit;
+  const pool = G.sel.size > 0 ? G.leads.filter(l=>G.sel.has(l.id)) : G.leads;
+  const rows = [['Name','Category','Phone','Website','Address','City','State','Zip','Rating','Reviews','Score','Notes']];
+  pool.slice(0, limit).forEach(l => rows.push([l.name,l.cat,l.phone,l.website,l.address,l.city,l.state,l.zip,l.rating,l.reviews,l.score,l.notes]));
+  const csv = rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = `leads_${Date.now()}.csv`; a.click();
+  closeMo(); showToast(`Exported ${Math.min(pool.length,limit)} leads`, 's');
+}
+
+function exportSaved() {
+  if (!G.saved.length) { showToast('No saved leads yet', 'i'); return; }
+  G.leads = G.saved; openExport();
+}
+
+// ── VIEWS / PAGES ──────────────────────────────────────────────────────────
+function hideAllPages() {
+  ['landing','pricing','login','signup'].forEach(p => {
+    const el = document.getElementById('page-' + p);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('page-dashboard').style.display = 'none';
+}
+
+function showPage(name) {
+  hideAllPages();
+  const el = document.getElementById('page-' + name);
+  if (!el) return;
+  el.style.display = ['login','signup','pricing'].includes(name) ? 'flex' : 'block';
+
+  // Update header buttons
+  const hdrRight = document.getElementById('hdrRight');
+  if (['landing','pricing'].includes(name)) {
+    hdrRight.innerHTML = `<button class="btn btn-o" onclick="showPage('login')">Log in</button><button class="btn btn-p" onclick="showPage('signup')">Get started</button>`;
+  } else if (['login','signup'].includes(name)) {
+    hdrRight.innerHTML = `<button class="btn btn-o" onclick="showPage('${name==='login'?'signup':'login'}')">${name==='login'?'Sign up':'Log in'}</button>`;
+  }
+}
+
+function showView(name, navEl) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.getElementById('view-'+name).classList.add('on');
+  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));
+  if(navEl) navEl.classList.add('on');
+}
+
+// ── API HELPER ─────────────────────────────────────────────────────────────
+async function api(url, method='GET', body=null) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (G.token) opts.headers['Authorization'] = 'Bearer ' + G.token;
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(url, opts);
+  return res.json();
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────────
+let tt;
+function showToast(msg, type='s') {
+  document.getElementById('tmsg').textContent = msg;
+  document.getElementById('tdot').className = 'tdot ' + type;
+  const t = document.getElementById('toast');
+  t.classList.add('on'); clearTimeout(tt);
+  tt = setTimeout(()=>t.classList.remove('on'), 2800);
+}
+
+// Enter key on auth forms
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const p = document.querySelector('[id^="page-"]:not([style*="display: none"]):not([style*="display:none"])');
+  if (!p) return;
+  if (p.id === 'page-login') doLogin();
+  if (p.id === 'page-signup') doSignup();
+});
+</script>
+</body>
+</html>
