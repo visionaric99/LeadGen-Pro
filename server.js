@@ -25,10 +25,10 @@ users.set('visionaricscaling@gmail.com', {
 
 // ── PLANS ──────────────────────────────────────────────────────────────────
 const PLANS = {
-  free:   { exports: 0,      searchLimit: 5,   label: 'Free',          price: 0 },
-  basic:  { exports: 50,     searchLimit: 50,  label: 'Basic',         price: 29 },
-  pro:    { exports: 200,    searchLimit: 200, label: 'Pro',           price: 79 },
-  agency: { exports: 999999, searchLimit: 500, label: 'Agency',        price: 199 }
+  free:   { exports: 0,      searchLimit: 100,   label: 'Free',          price: 0 },
+  basic:  { exports: 50,     searchLimit: 100,  label: 'Basic',         price: 29 },
+  pro:    { exports: 200,    searchLimit: 100, label: 'Pro',           price: 79 },
+  agency: { exports: 999999, searchLimit: 100, label: 'Agency',        price: 199 }
 };
 
 const STRIPE_PRICES = {
@@ -67,7 +67,7 @@ function calcScore(rating, reviews) {
 }
 
 async function searchGoogle(query, location, limit) {
-  const params = new URLSearchParams({ query: `${query} in ${location}`, limit: String(Math.min(limit, 20)), language: 'en', region: 'us' });
+  const params = new URLSearchParams({ query: `${query} in ${location}`, limit: String(Math.min(limit, 100)), language: 'en', region: 'us' });
   const data = await rapidFetch('local-business-data.p.rapidapi.com', '/search?' + params);
   return (data.data || []).map(b => ({
     id: 'g_' + (b.business_id || Math.random().toString(36).slice(2)),
@@ -159,7 +159,7 @@ app.get('/api/search', auth, async (req, res) => {
   if (!q || !loc) return res.status(400).json({ error: 'Missing search query or location' });
   const user = users.get(req.user.email);
   const planLimits = PLANS[user.plan];
-  const searchLimit = Math.min(parseInt(limit) || 20, planLimits.searchLimit);
+  const searchLimit = 100;
   const errors = [];
   let leads = [];
   try { leads = await searchGoogle(q, loc, searchLimit); }
