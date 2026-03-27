@@ -244,7 +244,7 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
   <div class="landing fadein" style="position:relative;overflow:hidden;min-height:calc(100vh - 54px)">
 
     <!-- 3D GLOBE CANVAS -->
-    <canvas id="globeCanvas" style="position:absolute;right:-160px;top:50%;transform:translateY(-44%);width:900px;height:900px;z-index:0;opacity:1;cursor:grab"></canvas>
+    <canvas id="globeCanvas" style="position:absolute;right:-100px;top:50%;transform:translateY(-46%);width:780px;height:780px;z-index:0;opacity:1;cursor:grab"></canvas>
 
     <!-- CONTENT OVERLAY -->
     <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 54px);padding:2rem 1.5rem;text-align:center">
@@ -1208,7 +1208,7 @@ document.addEventListener('keydown',e=>{
     const W = 900, H = 900;
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(38, 1, 0.1, 1000);
-    camera.position.z = 2.5;
+    camera.position.z = 3.8;
 
     renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
