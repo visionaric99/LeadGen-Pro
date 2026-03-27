@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -244,7 +245,7 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
   <div class="landing fadein" style="position:relative;overflow:hidden;min-height:calc(100vh - 54px)">
 
     <!-- 3D GLOBE CANVAS -->
-    <canvas id="globeCanvas" style="position:absolute;right:-80px;bottom:-60px;width:680px;height:680px;z-index:0;opacity:0.9;cursor:grab"></canvas>
+    <canvas id="globeCanvas" style="position:absolute;right:-180px;bottom:-200px;width:1100px;height:1100px;z-index:0;opacity:0.92;cursor:grab"></canvas>
 
     <!-- CONTENT OVERLAY -->
     <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 54px);padding:2rem 1.5rem;text-align:center">
@@ -1204,11 +1205,11 @@ document.addEventListener('keydown',e=>{
 
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
-    camera.position.z = 2.8;
+    camera.position.z = 2.2;
 
     renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(680, 680);
+    renderer.setSize(1100, 1100);
     renderer.setClearColor(0x000000, 0);
 
     // Globe wireframe sphere
@@ -1306,7 +1307,7 @@ document.addEventListener('keydown',e=>{
     }
 
     // Hover detection — find nearest visible city
-    const W = 680, H = 680;
+    const W = 1100, H = 1100;
     const mouse = new THREE.Vector2(
       (mousePos.x / W) * 2 - 1,
       -(mousePos.y / H) * 2 + 1
@@ -1318,7 +1319,7 @@ document.addEventListener('keydown',e=>{
     const hits = raycaster.intersectObjects(cityMeshes, false);
 
     // Manual screen-space proximity check — more reliable than raycaster on small dots
-    let closest = null, closestDist = 28; // px threshold
+    let closest = null, closestDist = 44; // px threshold
     cityMeshes.forEach(m => {
       const worldPos = new THREE.Vector3();
       m.getWorldPosition(worldPos);
@@ -1348,7 +1349,7 @@ document.addEventListener('keydown',e=>{
   }
 
   function onResize() {
-    renderer.setSize(680, 680);
+    renderer.setSize(1100, 1100);
     camera.aspect = 1;
     camera.updateProjectionMatrix();
   }
