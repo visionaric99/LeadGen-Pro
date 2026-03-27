@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LeadGen Pro</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swapfamily=DM+Sans:wght@300;400;500https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swapfamily=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swapfamily=DM+Sans:wght@300;400;500https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swapfamily=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#08090d;--bg2:#0f1018;--bg3:#181923;--bg4:#1f2130;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);--text:#eeeef5;--muted:#7a7a9a;--accent:#4f8ef7;--accent2:#43e0a0;--accent-dim:rgba(79,142,247,0.13);--green:#43e0a0;--green-dim:rgba(67,224,160,0.12);--red:#f25c5c;--yellow:#f5c842;--orange:#f5934a;--head:'Oxanium',sans-serif;--body:'DM Sans',sans-serif;--mono:'DM Mono',monospace}
+:root{--bg:#08090d;--bg2:#0f1018;--bg3:#181923;--bg4:#1f2130;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);--text:#eeeef5;--muted:#7a7a9a;--accent:#4f8ef7;--accent2:#43e0a0;--accent-dim:rgba(79,142,247,0.13);--green:#43e0a0;--green-dim:rgba(67,224,160,0.12);--red:#f25c5c;--yellow:#f5c842;--orange:#f5934a;--head:'Syncopate',sans-serif;--body:'DM Sans',sans-serif;--mono:'DM Mono',monospace}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:15px}body{background:var(--bg);color:var(--text);font-family:var(--body);min-height:100vh;display:flex;flex-direction:column}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
@@ -16,7 +16,7 @@ html{font-size:15px}body{background:var(--bg);color:var(--text);font-family:var(
 
 /* HEADER */
 .hdr{display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:54px;border-bottom:1px solid var(--border);background:rgba(8,9,13,0.97);position:sticky;top:0;z-index:100}
-.logo{display:flex;align-items:center;gap:9px;font-family:var(--head);font-weight:800;font-size:1.05rem;letter-spacing:-.02em}
+.logo{display:flex;align-items:center;gap:9px;font-family:var(--head);font-weight:700;font-size:.85rem;letter-spacing:.12em;text-transform:uppercase}
 .logo-dot{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px}
 .hdr-r{display:flex;align-items:center;gap:10px}
 .plan-pill{border-radius:999px;padding:3px 12px;font-size:11px;font-family:var(--mono);border:1px solid}
@@ -51,7 +51,7 @@ html{font-size:15px}body{background:var(--bg);color:var(--text);font-family:var(
 
 /* LANDING */
 .landing{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1.5rem;text-align:center}
-.landing-title{font-family:var(--head);font-size:clamp(2rem,5vw,3.6rem);font-weight:800;letter-spacing:-.01em;line-height:1.1;margin-bottom:1rem}
+.landing-title{font-family:var(--head);font-size:clamp(1.4rem,3.5vw,2.6rem);font-weight:700;letter-spacing:.08em;line-height:1.2;margin-bottom:1rem;text-transform:uppercase}
 .landing-title span{color:var(--accent)}
 .landing-sub{color:var(--muted);font-size:1rem;max-width:480px;line-height:1.7;margin-bottom:2rem}
 .landing-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:3rem}
@@ -212,7 +212,7 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
 
 /* PREMIUM UX POLISH */
 .spanel{padding:1.4rem 1.8rem;border-bottom:1px solid var(--border)}
-.ptitle{font-family:var(--head);font-size:1.25rem;font-weight:700;letter-spacing:.02em;margin-bottom:.9rem;text-transform:uppercase}
+.ptitle{font-family:var(--head);font-size:1rem;font-weight:700;letter-spacing:.1em;margin-bottom:.9rem;text-transform:uppercase}
 .ra{flex:1;overflow-y:auto;padding:1.4rem 1.8rem}
 .side{padding:1.4rem 1rem}
 .nav{padding:8px 10px;border-radius:8px;font-size:12.5px}
