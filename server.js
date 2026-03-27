@@ -113,8 +113,8 @@ function calcScore(rating, reviews) {
   return Math.round(Math.min((rating / 5) * 60, 60) + Math.min(Math.log10((reviews || 1) + 1) * 15, 40));
 }
 
-async function searchGoogle(query, location, limit) {
-  const params = new URLSearchParams({ query: `${query} in ${location}`, limit: String(Math.min(limit, 100)), language: 'en', region: 'us' });
+async function searchGoogle(query, location, limit, offset=0) {
+  const params = new URLSearchParams({ query: `${query} in ${location}`, limit: String(Math.min(limit, 20)), language: 'en', region: 'us', offset: String(offset) });
   const data = await rapidFetch('local-business-data.p.rapidapi.com', '/search?' + params);
   return (data.data || []).map(b => ({
     id: 'g_' + (b.business_id || Math.random().toString(36).slice(2)),
@@ -243,24 +243,22 @@ app.post('/api/stripe-webhook', express.raw({ type: 'application/json' }), async
 
 // ── SEARCH ─────────────────────────────────────────────────────────────────
 app.get('/api/search', auth, async (req, res) => {
-  const { q, loc, limit } = req.query;
+  const { q, loc, limit, noWebsite } = req.query;
   if (!q || !loc) return res.status(400).json({ error: 'Missing search query or location' });
   const user = users.get(req.user.email);
   if (!user) return res.status(401).json({ error: 'User not found' });
   const planLimits = PLANS[user.plan] || PLANS.free;
+  const targetLimit = Math.min(parseInt(limit) || 20, 100);
+  const filterNoWebsite = noWebsite === 'true';
 
-  // Rate limit — max 10 searches per minute per user
   if (!checkRateLimit(user.email, 10)) {
     return res.status(429).json({ error: 'Too many searches — wait a minute and try again' });
   }
-
-  // Daily search cap per plan
   if (!checkDailyLimit(user.email, planLimits.dailySearches)) {
     return res.status(429).json({ error: `Daily search limit reached (${planLimits.dailySearches}/day on ${planLimits.label} plan). Upgrade for more.` });
   }
 
-  // Check cache first — saves API calls
-  const cacheKey = `${q.toLowerCase().trim()}:${loc.toLowerCase().trim()}`;
+  const cacheKey = `${q.toLowerCase().trim()}:${loc.toLowerCase().trim()}:${targetLimit}:${filterNoWebsite}`;
   const cached = getCached(cacheKey);
   if (cached) {
     console.log(`[CACHE HIT] ${cacheKey}`);
@@ -269,34 +267,59 @@ app.get('/api/search', auth, async (req, res) => {
 
   const errors = [];
   let leads = [];
-  console.log(`[SEARCH] q="${q}" loc="${loc}" user=${user.email}`);
-  try {
-    const searchLimit = Math.min(parseInt(limit) || 20, 100);
-    leads = await searchGoogle(q, loc, searchLimit);
-    console.log(`[SEARCH] got ${leads.length} results`);
-  } catch(e) {
-    console.error('[SEARCH ERROR]', e.message);
-    errors.push(e.message);
+  const seen = new Set();
+  console.log(`[SEARCH] q="${q}" loc="${loc}" limit=${targetLimit} noWebsite=${filterNoWebsite}`);
+
+  if (filterNoWebsite) {
+    // Smart paginating fetch — keeps calling API in batches of 20 until we
+    // collect enough no-website results or exhaust results (max 8 API calls)
+    let offset = 0;
+    let apiCalls = 0;
+    const MAX_CALLS = 8;
+
+    while (leads.length < targetLimit && apiCalls < MAX_CALLS) {
+      try {
+        const batch = await searchGoogle(q, loc, 20, offset);
+        apiCalls++;
+        if (!batch.length) break;
+        for (const b of batch) {
+          const key = (b.name + b.city).toLowerCase().replace(/\s/g, '');
+          if (seen.has(key)) continue;
+          seen.add(key);
+          if (!b.website || !b.website.trim()) {
+            leads.push(b);
+            if (leads.length >= targetLimit) break;
+          }
+        }
+        offset += 20;
+        if (batch.length < 20) break;
+      } catch(e) {
+        errors.push(e.message);
+        console.error('[SEARCH ERROR]', e.message);
+        break;
+      }
+    }
+    console.log(`[SEARCH] ${leads.length} no-website results in ${apiCalls} API calls`);
+  } else {
+    try {
+      const batch = await searchGoogle(q, loc, targetLimit, 0);
+      for (const b of batch) {
+        const key = (b.name + b.city).toLowerCase().replace(/\s/g, '');
+        if (!seen.has(key)) { seen.add(key); leads.push(b); }
+      }
+    } catch(e) {
+      errors.push(e.message);
+      console.error('[SEARCH ERROR]', e.message);
+    }
   }
 
   if (!leads.length && errors.length) {
     return res.json({ leads: [], errors, total: 0, plan: user.plan, exportLimit: planLimits.exports, debug: errors.join(' | ') });
   }
 
-  // Deduplicate
-  const seen = new Set();
-  leads = leads.filter(l => {
-    const key = (l.name + l.city).toLowerCase().replace(/\s/g, '');
-    if (seen.has(key)) return false;
-    seen.add(key); return true;
-  });
-
-  // Cache the result
   setCache(cacheKey, leads);
-
-  res.json({ leads, errors, total: leads.length, plan: user.plan, exportLimit: planLimits.exports });
+  res.json({ leads, errors, total: leads.length, plan: user.plan, exportLimit: planLimits.exports, filtered: filterNoWebsite });
 });
-
 // ── HEALTH ─────────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
