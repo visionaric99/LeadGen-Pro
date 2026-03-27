@@ -241,17 +241,29 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
 
 <!-- LANDING -->
 <div id="page-landing">
-  <div class="landing fadein">
-    <div class="landing-title">Find real business leads<br><span>in seconds</span></div>
-    <div class="landing-sub">Search any business type in any city. Get real phone numbers, websites, addresses and ratings — ready to export, outreach, and close.</div>
-    <div class="landing-btns">
-      <button class="btn btn-p btn-lg" onclick="showPage('signup')">Start free →</button>
-      <button class="btn btn-o btn-lg" onclick="showPage('pricing')">See pricing</button>
+  <div class="landing fadein" style="position:relative;overflow:hidden;min-height:calc(100vh - 54px)">
+
+    <!-- 3D GLOBE CANVAS -->
+    <canvas id="globeCanvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:0.85;cursor:grab"></canvas>
+
+    <!-- CONTENT OVERLAY -->
+    <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 54px);padding:2rem 1.5rem;text-align:center">
+      <div class="landing-title" style="margin-bottom:.8rem">Find real business leads<br><span style="color:var(--accent)">in seconds</span></div>
+      <div class="landing-sub" style="margin-bottom:2rem">Search any business type in any city. Real phones, websites, addresses — ready to export and close.</div>
+      <div class="landing-btns" style="margin-bottom:2.5rem">
+        <button class="btn btn-p btn-lg" onclick="showPage('signup')">Start free →</button>
+        <button class="btn btn-o btn-lg" onclick="showPage('pricing')">See pricing</button>
+      </div>
+      <div class="features" style="max-width:680px">
+        <div class="feat"><div class="feat-ic">📍</div><div class="feat-t">Live business data</div><div class="feat-s">Real businesses from Google Maps — phones, websites, addresses</div></div>
+        <div class="feat"><div class="feat-ic">📧</div><div class="feat-t">Email outreach</div><div class="feat-s">Send cold emails to leads directly from the dashboard</div></div>
+        <div class="feat"><div class="feat-ic">📋</div><div class="feat-t">Built-in CRM</div><div class="feat-s">Track every lead from first contact to closed deal</div></div>
+      </div>
     </div>
-    <div class="features">
-      <div class="feat"><div class="feat-ic">📍</div><div class="feat-t">Live business data</div><div class="feat-s">Real businesses from Google Maps — phones, websites, addresses</div></div>
-      <div class="feat"><div class="feat-ic">📧</div><div class="feat-t">Email outreach</div><div class="feat-s">Send cold emails to leads directly from the dashboard</div></div>
-      <div class="feat"><div class="feat-ic">📋</div><div class="feat-t">Built-in CRM</div><div class="feat-s">Track every lead from first contact to closed deal</div></div>
+
+    <!-- CITY TOOLTIP -->
+    <div id="cityTooltip" style="position:absolute;background:rgba(15,16,24,0.92);border:1px solid rgba(79,142,247,0.4);border-radius:8px;padding:6px 12px;font-size:12px;font-family:var(--mono);color:#eeeef5;pointer-events:none;display:none;z-index:10;white-space:nowrap;transition:opacity .15s">
+      <span id="cityName"></span>
     </div>
   </div>
 </div>
@@ -1134,6 +1146,229 @@ document.addEventListener('keydown',e=>{
   if(active.id==='page-login')doLogin();
   if(active.id==='page-signup')doSignup();
 });
+</script>
+
+<!-- THREE.JS GLOBE -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function() {
+  const CITIES = [
+    {name:'New York',lat:40.71,lng:-74.01},{name:'Los Angeles',lat:34.05,lng:-118.24},
+    {name:'Chicago',lat:41.88,lng:-87.63},{name:'Houston',lat:29.76,lng:-95.37},
+    {name:'Miami',lat:25.77,lng:-80.19},{name:'London',lat:51.51,lng:-0.13},
+    {name:'Paris',lat:48.86,lng:2.35},{name:'Tokyo',lat:35.68,lng:139.69},
+    {name:'Sydney',lat:-33.87,lng:151.21},{name:'Dubai',lat:25.20,lng:55.27},
+    {name:'Singapore',lat:1.35,lng:103.82},{name:'Toronto',lat:43.65,lng:-79.38},
+    {name:'São Paulo',lat:-23.55,lng:-46.63},{name:'Mexico City',lat:19.43,lng:-99.13},
+    {name:'Berlin',lat:52.52,lng:13.40},{name:'Madrid',lat:40.42,lng:-3.70},
+    {name:'Rome',lat:41.90,lng:12.50},{name:'Amsterdam',lat:52.37,lng:4.90},
+    {name:'Seoul',lat:37.57,lng:126.98},{name:'Mumbai',lat:19.08,lng:72.88},
+    {name:'Lagos',lat:6.52,lng:3.38},{name:'Cairo',lat:30.04,lng:31.24},
+    {name:'Johannesburg',lat:-26.20,lng:28.04},{name:'Istanbul',lat:41.01,lng:28.95},
+    {name:'Moscow',lat:55.75,lng:37.62},{name:'Beijing',lat:39.91,lng:116.39},
+    {name:'Shanghai',lat:31.23,lng:121.47},{name:'Bangkok',lat:13.76,lng:100.50},
+    {name:'Jakarta',lat:-6.21,lng:106.85},{name:'Manila',lat:14.60,lng:120.98},
+    {name:'Nairobi',lat:-1.29,lng:36.82},{name:'Buenos Aires',lat:-34.60,lng:-58.38},
+    {name:'Lima',lat:-12.05,lng:-77.04},{name:'Bogotá',lat:4.71,lng:-74.07},
+    {name:'Santiago',lat:-33.46,lng:-70.65},{name:'Phoenix',lat:33.45,lng:-112.07},
+    {name:'Dallas',lat:32.78,lng:-96.80},{name:'Atlanta',lat:33.75,lng:-84.39},
+    {name:'Seattle',lat:47.61,lng:-122.33},{name:'San Francisco',lat:37.77,lng:-122.42},
+    {name:'Las Vegas',lat:36.17,lng:-115.14},{name:'Denver',lat:39.74,lng:-104.98},
+    {name:'Toronto',lat:43.65,lng:-79.38},{name:'Vancouver',lat:49.28,lng:-123.12},
+    {name:'Melbourne',lat:-37.81,lng:144.96},{name:'Auckland',lat:-36.86,lng:174.77},
+    {name:'Riyadh',lat:24.69,lng:46.72},{name:'Kuala Lumpur',lat:3.14,lng:101.69},
+    {name:'Karachi',lat:24.86,lng:67.01},{name:'Dhaka',lat:23.81,lng:90.41}
+  ];
+
+  function latLngToVec3(lat, lng, r) {
+    const phi = (90 - lat) * Math.PI / 180;
+    const theta = (lng + 180) * Math.PI / 180;
+    return new THREE.Vector3(
+      -r * Math.sin(phi) * Math.cos(theta),
+       r * Math.cos(phi),
+       r * Math.sin(phi) * Math.sin(theta)
+    );
+  }
+
+  let scene, camera, renderer, globe, cityMeshes = [], markerGroup;
+  let isDragging = false, prevMouse = {x:0,y:0};
+  let autoSpin = true;
+  let mousePos = {x:0,y:0};
+  const tooltip = document.getElementById('cityTooltip');
+  const cityNameEl = document.getElementById('cityName');
+  const canvas = document.getElementById('globeCanvas');
+
+  function init() {
+    if (!canvas) return;
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(45, W/H, 0.1, 1000);
+    camera.position.z = 2.8;
+
+    renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(W, H);
+    renderer.setClearColor(0x000000, 0);
+
+    // Globe wireframe sphere
+    const geo = new THREE.SphereGeometry(1, 48, 48);
+    const wireMat = new THREE.MeshBasicMaterial({
+      color: 0x1a2a4a,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.35
+    });
+    globe = new THREE.Mesh(geo, wireMat);
+    scene.add(globe);
+
+    // Solid inner sphere (subtle)
+    const innerGeo = new THREE.SphereGeometry(0.995, 32, 32);
+    const innerMat = new THREE.MeshBasicMaterial({
+      color: 0x050810,
+      transparent: true,
+      opacity: 0.6
+    });
+    scene.add(new THREE.Mesh(innerGeo, innerMat));
+
+    // Equator ring accent
+    const ringGeo = new THREE.TorusGeometry(1.001, 0.002, 6, 120);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x4f8ef7, transparent: true, opacity: 0.4 });
+    scene.add(new THREE.Mesh(ringGeo, ringMat));
+
+    // Atmosphere glow ring
+    const atmGeo = new THREE.SphereGeometry(1.08, 32, 32);
+    const atmMat = new THREE.MeshBasicMaterial({
+      color: 0x4f8ef7,
+      transparent: true,
+      opacity: 0.04,
+      side: THREE.BackSide
+    });
+    scene.add(new THREE.Mesh(atmGeo, atmMat));
+
+    // City markers
+    markerGroup = new THREE.Group();
+    scene.add(markerGroup);
+
+    CITIES.forEach(city => {
+      const pos = latLngToVec3(city.lat, city.lng, 1.01);
+      const dotGeo = new THREE.SphereGeometry(0.008, 8, 8);
+      const dotMat = new THREE.MeshBasicMaterial({ color: 0x43e0a0, transparent: true, opacity: 0.8 });
+      const dot = new THREE.Mesh(dotGeo, dotMat);
+      dot.position.copy(pos);
+      dot.userData = { name: city.name, lat: city.lat, lng: city.lng };
+      markerGroup.add(dot);
+      cityMeshes.push(dot);
+
+      // Pulse ring around city
+      const ringG = new THREE.RingGeometry(0.012, 0.016, 16);
+      const ringM = new THREE.MeshBasicMaterial({ color: 0x43e0a0, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+      const ring = new THREE.Mesh(ringG, ringM);
+      ring.position.copy(pos);
+      ring.lookAt(new THREE.Vector3(0,0,0));
+      markerGroup.add(ring);
+    });
+
+    // Ambient light
+    scene.add(new THREE.AmbientLight(0x4f8ef7, 0.3));
+
+    // Events
+    canvas.addEventListener('mousedown', onMouseDown);
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('mouseup', () => { isDragging = false; canvas.style.cursor = 'grab'; autoSpin = true; });
+    canvas.addEventListener('mouseleave', () => { isDragging = false; tooltip.style.display = 'none'; autoSpin = true; });
+    window.addEventListener('resize', onResize);
+
+    animate();
+  }
+
+  function onMouseDown(e) {
+    isDragging = true;
+    autoSpin = false;
+    canvas.style.cursor = 'grabbing';
+    prevMouse = { x: e.clientX, y: e.clientY };
+  }
+
+  function onMouseMove(e) {
+    const rect = canvas.getBoundingClientRect();
+    mousePos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+
+    if (isDragging) {
+      const dx = e.clientX - prevMouse.x;
+      const dy = e.clientY - prevMouse.y;
+      globe.rotation.y += dx * 0.005;
+      globe.rotation.x += dy * 0.005;
+      markerGroup.rotation.y += dx * 0.005;
+      markerGroup.rotation.x += dy * 0.005;
+      prevMouse = { x: e.clientX, y: e.clientY };
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    // Hover detection — find nearest visible city
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    const mouse = new THREE.Vector2(
+      (mousePos.x / W) * 2 - 1,
+      -(mousePos.y / H) * 2 + 1
+    );
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+    const hits = raycaster.intersectObjects(cityMeshes);
+
+    if (hits.length > 0) {
+      const city = hits[0].object.userData;
+      cityNameEl.textContent = '📍 ' + city.name;
+      tooltip.style.display = 'block';
+      tooltip.style.left = (mousePos.x + 16) + 'px';
+      tooltip.style.top = (mousePos.y - 10) + 'px';
+      // Highlight hovered city
+      cityMeshes.forEach(m => {
+        m.material.color.set(m === hits[0].object ? 0xf5c842 : 0x43e0a0);
+        m.material.opacity = m === hits[0].object ? 1 : 0.8;
+      });
+    } else {
+      tooltip.style.display = 'none';
+      cityMeshes.forEach(m => { m.material.color.set(0x43e0a0); m.material.opacity = 0.8; });
+    }
+  }
+
+  function onResize() {
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    camera.aspect = W / H;
+    camera.updateProjectionMatrix();
+    renderer.setSize(W, H);
+  }
+
+  let frame = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    frame++;
+    if (autoSpin && !isDragging) {
+      globe.rotation.y += 0.0015;
+      markerGroup.rotation.y += 0.0015;
+    }
+    // Pulse city markers
+    cityMeshes.forEach((m, i) => {
+      const pulse = 0.8 + Math.sin(frame * 0.04 + i * 0.5) * 0.2;
+      m.scale.setScalar(pulse);
+    });
+    renderer.render(scene, camera);
+  }
+
+  // Init when landing page is shown
+  const origShowPage = window.showPage;
+  window.showPage = function(name) {
+    origShowPage && origShowPage(name);
+    if (name === 'landing' && !scene) setTimeout(init, 100);
+  };
+
+  // Auto-init if landing is visible on load
+  window.addEventListener('DOMContentLoaded', () => {
+    const lp = document.getElementById('page-landing');
+    if (lp && lp.style.display !== 'none') setTimeout(init, 200);
+  });
+  setTimeout(init, 300);
+})();
 </script>
 </body>
 </html>
