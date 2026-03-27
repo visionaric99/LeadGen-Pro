@@ -1191,8 +1191,10 @@ document.addEventListener('keydown',e=>{
 
     // Position globe to right side, slightly lower — same as before
     globeGroup = new THREE.Group();
-    globeGroup.position.set(2.2, -0.3, 0);
-    camera.position.z=6.0;
+    globeGroup.position.set(1.8, -0.2, 0);
+    globeGroup.rotation.x = 0.28;
+    globeGroup.rotation.z = -0.08;
+    camera.position.z=4.8;
 
     renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
     renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
