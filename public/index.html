@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -245,7 +244,7 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
   <div class="landing fadein" style="position:relative;overflow:hidden;min-height:calc(100vh - 54px)">
 
     <!-- 3D GLOBE CANVAS -->
-    <canvas id="globeCanvas" style="position:absolute;right:-180px;bottom:-200px;width:1100px;height:1100px;z-index:0;opacity:0.92;cursor:grab"></canvas>
+    <canvas id="globeCanvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:1;cursor:grab"></canvas>
 
     <!-- CONTENT OVERLAY -->
     <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 54px);padding:2rem 1.5rem;text-align:center">
@@ -1153,236 +1152,136 @@ document.addEventListener('keydown',e=>{
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function() {
-  const CITIES = [
-    {name:'New York',lat:40.71,lng:-74.01},{name:'Los Angeles',lat:34.05,lng:-118.24},
-    {name:'Chicago',lat:41.88,lng:-87.63},{name:'Houston',lat:29.76,lng:-95.37},
-    {name:'Miami',lat:25.77,lng:-80.19},{name:'London',lat:51.51,lng:-0.13},
-    {name:'Paris',lat:48.86,lng:2.35},{name:'Tokyo',lat:35.68,lng:139.69},
-    {name:'Sydney',lat:-33.87,lng:151.21},{name:'Dubai',lat:25.20,lng:55.27},
-    {name:'Singapore',lat:1.35,lng:103.82},{name:'Toronto',lat:43.65,lng:-79.38},
-    {name:'São Paulo',lat:-23.55,lng:-46.63},{name:'Mexico City',lat:19.43,lng:-99.13},
-    {name:'Berlin',lat:52.52,lng:13.40},{name:'Madrid',lat:40.42,lng:-3.70},
-    {name:'Rome',lat:41.90,lng:12.50},{name:'Amsterdam',lat:52.37,lng:4.90},
-    {name:'Seoul',lat:37.57,lng:126.98},{name:'Mumbai',lat:19.08,lng:72.88},
-    {name:'Lagos',lat:6.52,lng:3.38},{name:'Cairo',lat:30.04,lng:31.24},
-    {name:'Johannesburg',lat:-26.20,lng:28.04},{name:'Istanbul',lat:41.01,lng:28.95},
-    {name:'Moscow',lat:55.75,lng:37.62},{name:'Beijing',lat:39.91,lng:116.39},
-    {name:'Shanghai',lat:31.23,lng:121.47},{name:'Bangkok',lat:13.76,lng:100.50},
-    {name:'Jakarta',lat:-6.21,lng:106.85},{name:'Manila',lat:14.60,lng:120.98},
-    {name:'Nairobi',lat:-1.29,lng:36.82},{name:'Buenos Aires',lat:-34.60,lng:-58.38},
-    {name:'Lima',lat:-12.05,lng:-77.04},{name:'Bogotá',lat:4.71,lng:-74.07},
-    {name:'Santiago',lat:-33.46,lng:-70.65},{name:'Phoenix',lat:33.45,lng:-112.07},
-    {name:'Dallas',lat:32.78,lng:-96.80},{name:'Atlanta',lat:33.75,lng:-84.39},
-    {name:'Seattle',lat:47.61,lng:-122.33},{name:'San Francisco',lat:37.77,lng:-122.42},
-    {name:'Las Vegas',lat:36.17,lng:-115.14},{name:'Denver',lat:39.74,lng:-104.98},
-    {name:'Toronto',lat:43.65,lng:-79.38},{name:'Vancouver',lat:49.28,lng:-123.12},
-    {name:'Melbourne',lat:-37.81,lng:144.96},{name:'Auckland',lat:-36.86,lng:174.77},
-    {name:'Riyadh',lat:24.69,lng:46.72},{name:'Kuala Lumpur',lat:3.14,lng:101.69},
-    {name:'Karachi',lat:24.86,lng:67.01},{name:'Dhaka',lat:23.81,lng:90.41}
-  ];
+  const canvas = document.getElementById('globeCanvas');
+  if (!canvas) return;
 
-  function latLngToVec3(lat, lng, r) {
-    const phi = (90 - lat) * Math.PI / 180;
-    const theta = (lng + 180) * Math.PI / 180;
-    return new THREE.Vector3(
-      -r * Math.sin(phi) * Math.cos(theta),
-       r * Math.cos(phi),
-       r * Math.sin(phi) * Math.sin(theta)
-    );
-  }
-
-  let scene, camera, renderer, globe, cityMeshes = [], markerGroup;
+  let scene, camera, renderer, globeGroup;
   let isDragging = false, prevMouse = {x:0,y:0};
   let autoSpin = true;
-  let mousePos = {x:0,y:0};
-  const tooltip = document.getElementById('cityTooltip');
-  const cityNameEl = document.getElementById('cityName');
-  const canvas = document.getElementById('globeCanvas');
 
   function init() {
-    if (!canvas) return;
-    const W = canvas.clientWidth, H = canvas.clientHeight;
+    const W = canvas.clientWidth || window.innerWidth;
+    const H = canvas.clientHeight || window.innerHeight;
 
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
-    camera.position.z = 2.2;
+    camera = new THREE.PerspectiveCamera(40, W / H, 0.1, 1000);
+    camera.position.z = 3.4;
 
     renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(1100, 1100);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(W, H);
     renderer.setClearColor(0x000000, 0);
 
-    // Globe wireframe sphere
-    const geo = new THREE.SphereGeometry(1, 48, 48);
+    globeGroup = new THREE.Group();
+    scene.add(globeGroup);
+
+    // Main wireframe globe — thin lines, no fill, no outline
+    const sphereGeo = new THREE.SphereGeometry(1, 36, 36);
     const wireMat = new THREE.MeshBasicMaterial({
-      color: 0x1a2a4a,
+      color: 0x1e3a6e,
       wireframe: true,
       transparent: true,
-      opacity: 0.35
+      opacity: 0.28
     });
-    globe = new THREE.Mesh(geo, wireMat);
-    scene.add(globe);
+    const wireMesh = new THREE.Mesh(sphereGeo, wireMat);
+    globeGroup.add(wireMesh);
 
-    // Solid inner sphere (subtle)
-    const innerGeo = new THREE.SphereGeometry(0.995, 32, 32);
-    const innerMat = new THREE.MeshBasicMaterial({
-      color: 0x050810,
+    // Subtle solid core — very dark, no black outline
+    const coreMat = new THREE.MeshBasicMaterial({
+      color: 0x040812,
       transparent: true,
-      opacity: 0.6
+      opacity: 0.55
     });
-    scene.add(new THREE.Mesh(innerGeo, innerMat));
+    const coreMesh = new THREE.Mesh(new THREE.SphereGeometry(0.993, 32, 32), coreMat);
+    globeGroup.add(coreMesh);
 
-    // Equator ring accent
-    const ringGeo = new THREE.TorusGeometry(1.001, 0.002, 6, 120);
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0x4f8ef7, transparent: true, opacity: 0.4 });
-    scene.add(new THREE.Mesh(ringGeo, ringMat));
+    // Latitude rings — accent lines at key latitudes
+    const latLines = [0, 23.5, -23.5, 66.5, -66.5];
+    latLines.forEach(lat => {
+      const r = Math.cos(lat * Math.PI / 180);
+      const y = Math.sin(lat * Math.PI / 180);
+      const ringGeo = new THREE.TorusGeometry(r, 0.0015, 6, 120);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: lat === 0 ? 0x4f8ef7 : 0x1e3a6e,
+        transparent: true,
+        opacity: lat === 0 ? 0.5 : 0.2
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.position.y = y;
+      ring.rotation.x = Math.PI / 2;
+      globeGroup.add(ring);
+    });
 
-    // Atmosphere glow ring
-    const atmGeo = new THREE.SphereGeometry(1.08, 32, 32);
+    // Atmospheric glow — soft blue halo, no hard edge
+    const atmGeo = new THREE.SphereGeometry(1.12, 32, 32);
     const atmMat = new THREE.MeshBasicMaterial({
-      color: 0x4f8ef7,
+      color: 0x1a4a9f,
       transparent: true,
-      opacity: 0.04,
+      opacity: 0.06,
       side: THREE.BackSide
     });
-    scene.add(new THREE.Mesh(atmGeo, atmMat));
+    globeGroup.add(new THREE.Mesh(atmGeo, atmMat));
 
-    // City markers
-    markerGroup = new THREE.Group();
-    scene.add(markerGroup);
-
-    CITIES.forEach(city => {
-      const pos = latLngToVec3(city.lat, city.lng, 1.01);
-      const dotGeo = new THREE.SphereGeometry(0.008, 8, 8);
-      const dotMat = new THREE.MeshBasicMaterial({ color: 0x43e0a0, transparent: true, opacity: 0.8 });
-      const dot = new THREE.Mesh(dotGeo, dotMat);
-      dot.position.copy(pos);
-      dot.userData = { name: city.name, lat: city.lat, lng: city.lng };
-      markerGroup.add(dot);
-      cityMeshes.push(dot);
-
-      // Pulse ring around city
-      const ringG = new THREE.RingGeometry(0.012, 0.016, 16);
-      const ringM = new THREE.MeshBasicMaterial({ color: 0x43e0a0, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
-      const ring = new THREE.Mesh(ringG, ringM);
-      ring.position.copy(pos);
-      ring.lookAt(new THREE.Vector3(0,0,0));
-      markerGroup.add(ring);
+    // Outer glow ring
+    const outerGeo = new THREE.SphereGeometry(1.22, 32, 32);
+    const outerMat = new THREE.MeshBasicMaterial({
+      color: 0x4f8ef7,
+      transparent: true,
+      opacity: 0.025,
+      side: THREE.BackSide
     });
+    globeGroup.add(new THREE.Mesh(outerGeo, outerMat));
 
-    // Ambient light
-    scene.add(new THREE.AmbientLight(0x4f8ef7, 0.3));
-
-    // Events
-    canvas.addEventListener('mousedown', onMouseDown);
-    canvas.addEventListener('mousemove', onMouseMove);
+    // Drag to spin
+    canvas.addEventListener('mousedown', e => {
+      isDragging = true; autoSpin = false;
+      canvas.style.cursor = 'grabbing';
+      prevMouse = {x: e.clientX, y: e.clientY};
+    });
+    canvas.addEventListener('mousemove', e => {
+      if (!isDragging) return;
+      const dx = e.clientX - prevMouse.x;
+      const dy = e.clientY - prevMouse.y;
+      globeGroup.rotation.y += dx * 0.004;
+      globeGroup.rotation.x += dy * 0.004;
+      prevMouse = {x: e.clientX, y: e.clientY};
+    });
     canvas.addEventListener('mouseup', () => { isDragging = false; canvas.style.cursor = 'grab'; autoSpin = true; });
-    canvas.addEventListener('mouseleave', () => { isDragging = false; tooltip.style.display = 'none'; autoSpin = true; });
-    window.addEventListener('resize', onResize);
+    canvas.addEventListener('mouseleave', () => { isDragging = false; autoSpin = true; });
+
+    window.addEventListener('resize', () => {
+      const W2 = canvas.clientWidth, H2 = canvas.clientHeight;
+      camera.aspect = W2 / H2;
+      camera.updateProjectionMatrix();
+      renderer.setSize(W2, H2);
+    });
 
     animate();
   }
 
-  function onMouseDown(e) {
-    isDragging = true;
-    autoSpin = false;
-    canvas.style.cursor = 'grabbing';
-    prevMouse = { x: e.clientX, y: e.clientY };
-  }
-
-  function onMouseMove(e) {
-    const rect = canvas.getBoundingClientRect();
-    mousePos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-
-    if (isDragging) {
-      const dx = e.clientX - prevMouse.x;
-      const dy = e.clientY - prevMouse.y;
-      globe.rotation.y += dx * 0.005;
-      globe.rotation.x += dy * 0.005;
-      markerGroup.rotation.y += dx * 0.005;
-      markerGroup.rotation.x += dy * 0.005;
-      prevMouse = { x: e.clientX, y: e.clientY };
-      tooltip.style.display = 'none';
-      return;
-    }
-
-    // Hover detection — find nearest visible city
-    const W = 1100, H = 1100;
-    const mouse = new THREE.Vector2(
-      (mousePos.x / W) * 2 - 1,
-      -(mousePos.y / H) * 2 + 1
-    );
-    const raycaster = new THREE.Raycaster();
-    raycaster.params.Points = { threshold: 0.05 };
-    raycaster.params.Line = { threshold: 0.05 };
-    raycaster.setFromCamera(mouse, camera);
-    const hits = raycaster.intersectObjects(cityMeshes, false);
-
-    // Manual screen-space proximity check — more reliable than raycaster on small dots
-    let closest = null, closestDist = 44; // px threshold
-    cityMeshes.forEach(m => {
-      const worldPos = new THREE.Vector3();
-      m.getWorldPosition(worldPos);
-      // Check if on front side of globe
-      const camDir = worldPos.clone().normalize();
-      if (camDir.dot(new THREE.Vector3(0,0,1)) < -0.1) return; // behind globe
-      const projected = worldPos.clone().project(camera);
-      const sx = (projected.x * 0.5 + 0.5) * W;
-      const sy = (-(projected.y) * 0.5 + 0.5) * H;
-      const dist = Math.sqrt((sx - mousePos.x)**2 + (sy - mousePos.y)**2);
-      if (dist < closestDist) { closest = m; closestDist = dist; }
-    });
-    if (closest) {
-      const city = closest.userData;
-      cityNameEl.textContent = '📍 ' + city.name;
-      tooltip.style.display = 'block';
-      tooltip.style.left = (mousePos.x + 16) + 'px';
-      tooltip.style.top = (mousePos.y - 10) + 'px';
-      cityMeshes.forEach(m => {
-        m.material.color.set(m === closest ? 0xf5c842 : 0x43e0a0);
-        m.material.opacity = m === closest ? 1 : 0.8;
-      });
-    } else {
-      tooltip.style.display = 'none';
-      cityMeshes.forEach(m => { m.material.color.set(0x43e0a0); m.material.opacity = 0.8; });
-    }
-  }
-
-  function onResize() {
-    renderer.setSize(1100, 1100);
-    camera.aspect = 1;
-    camera.updateProjectionMatrix();
-  }
-
-  let frame = 0;
   function animate() {
     requestAnimationFrame(animate);
-    frame++;
     if (autoSpin && !isDragging) {
-      globe.rotation.y += 0.0003;
-      markerGroup.rotation.y += 0.0003;
+      globeGroup.rotation.y += 0.0008;
     }
-    // Pulse city markers
-    cityMeshes.forEach((m, i) => {
-      const pulse = 0.8 + Math.sin(frame * 0.04 + i * 0.5) * 0.2;
-      m.scale.setScalar(pulse);
-    });
     renderer.render(scene, camera);
   }
 
-  // Init when landing page is shown
-  const origShowPage = window.showPage;
+  // Init on load
+  const tryInit = () => {
+    if (document.getElementById('page-landing') &&
+        document.getElementById('page-landing').style.display !== 'none') {
+      init();
+    }
+  };
+  setTimeout(tryInit, 300);
+
+  // Re-init if user navigates back to landing
+  const origShow = window.showPage;
   window.showPage = function(name) {
-    origShowPage && origShowPage(name);
+    origShow && origShow(name);
     if (name === 'landing' && !scene) setTimeout(init, 100);
   };
-
-  // Auto-init if landing is visible on load
-  window.addEventListener('DOMContentLoaded', () => {
-    const lp = document.getElementById('page-landing');
-    if (lp && lp.style.display !== 'none') setTimeout(init, 200);
-  });
-  setTimeout(init, 300);
 })();
 </script>
 </body>
