@@ -662,7 +662,7 @@ async function runSearch() {
     const arcIds=new Set(G.archived.map(a=>a.id));
     leads=leads.filter(l=>!arcIds.has(l.id));
     G.leads=leads; G.sel.clear(); G.exportLimit=res.exportLimit||0;
-    setTimeout(()=>{ pw.classList.remove('on'); leads.length?renderLeads():showEmpty('es','No results found','Try a different search or city.'); },300);
+    setTimeout(()=>{ pw.classList.remove('on'); if(res.debug||res.errors?.length) showEb((res.debug||res.errors.join(' | ')),'eb'); leads.length?renderLeads():showEmpty('es','No results found','Try a different term or city. Check the red error above.'); },300);
   } catch(e){ pw.classList.remove('on'); showEb('Search failed: '+e.message,'eb'); }
   finally{ btn.disabled=false; }
 }
