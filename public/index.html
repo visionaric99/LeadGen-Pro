@@ -391,7 +391,7 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
                 <div id="noWebTrack" style="width:36px;height:20px;border-radius:999px;background:var(--bg4);border:1px solid var(--border2);transition:background .2s"></div>
                 <div id="noWebThumb" style="position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--muted);transition:all .2s;pointer-events:none"></div>
               </div>
-              Only show businesses <strong style="color:var(--text);margin-left:3px">without a website</strong>
+              Search only businesses <strong style="color:var(--text);margin-left:3px">without a website</strong> <span style="font-size:10px;background:rgba(79,142,247,0.15);color:var(--accent);border-radius:999px;padding:1px 7px;font-family:var(--mono)">pre-search filter</span>
             </label>
           </div>
         </div>
@@ -813,7 +813,9 @@ async function runSearch() {
   const btn=document.getElementById('searchBtn'); btn.disabled=true;
   try {
     const limit=document.getElementById('searchLimit')?.value||'20';
-    const res=await api(`/api/search?q=${encodeURIComponent(q)}&loc=${encodeURIComponent(loc)}&limit=${limit}`,'GET');
+    const noWebsite=G.filters.noWebsite;
+    const filterParam=noWebsite?'&noWebsite=true':'';
+    const res=await api(`/api/search?q=${encodeURIComponent(q)}&loc=${encodeURIComponent(loc)}&limit=${limit}${filterParam}`,'GET');
     setProg('pfill','ppct','ptxt',100,'Done!');
     if(res.error){pw.classList.remove('on');showEb(res.error,'eb');return;}
     let leads=res.leads||[];
@@ -920,7 +922,7 @@ function toggleFilter(name){
 }
 function applyFilters(leads){
   let out=leads;
-  if(G.filters.noWebsite) out=out.filter(l=>!l.website||l.website.trim()==='');
+  // noWebsite filtering handled server-side when toggle is ON before search
   // noPhone filter removed
   return out;
 }
@@ -929,7 +931,11 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 
 function renderLeads() {
   const _filtered=applyFilters(G.leads);
-  document.getElementById('rc').textContent=`${_filtered.length} of ${G.leads.length} businesses found`;
+  const filterOn = G.filters.noWebsite;
+  const rcText = filterOn
+    ? `${G.leads.length} businesses without websites found`
+    : `${_filtered.length} of ${G.leads.length} businesses found${_filtered.length < G.leads.length ? ' ('+G.leads.length+' total, filtering active)' : ''}`;
+  document.getElementById('rc').textContent = rcText;
   document.getElementById('lb').innerHTML=_filtered.map(l=>`
     <tr class="${G.sel.has(l.id)?'sel':''} ${!l.website?'high-opp':''}" onclick="openD('${esc(l.id)}','main')">
       <td onclick="event.stopPropagation()"><input type="checkbox" ${G.sel.has(l.id)?'checked':''} style="accent-color:var(--accent);cursor:pointer" onchange="toggleSel('${esc(l.id)}',this)"></td>
