@@ -1,3 +1,4 @@
+
 const express = require('express');
 const https = require('https');
 const bcrypt = require('bcryptjs');
@@ -158,12 +159,22 @@ app.get('/api/search', auth, async (req, res) => {
   const { q, loc, limit } = req.query;
   if (!q || !loc) return res.status(400).json({ error: 'Missing search query or location' });
   const user = users.get(req.user.email);
-  const planLimits = PLANS[user.plan];
+  if (!user) return res.status(401).json({ error: 'User not found' });
+  const planLimits = PLANS[user.plan] || PLANS.free;
   const searchLimit = 100;
   const errors = [];
   let leads = [];
-  try { leads = await searchGoogle(q, loc, searchLimit); }
-  catch(e) { errors.push('Google Maps: ' + e.message); }
+  console.log(`[SEARCH] q="${q}" loc="${loc}" user=${user.email} key=${RAPID_KEY ? RAPID_KEY.slice(0,8)+'...' : 'MISSING'}`);
+  try {
+    leads = await searchGoogle(q, loc, searchLimit);
+    console.log(`[SEARCH] got ${leads.length} results`);
+  } catch(e) {
+    console.error('[SEARCH ERROR]', e.message);
+    errors.push(e.message);
+  }
+  if (!leads.length && errors.length) {
+    return res.json({ leads: [], errors, total: 0, plan: user.plan, exportLimit: planLimits.exports, debug: errors.join(' | ') });
+  }
   const seen = new Set();
   leads = leads.filter(l => {
     const key = (l.name + l.city).toLowerCase().replace(/\s/g, '');
