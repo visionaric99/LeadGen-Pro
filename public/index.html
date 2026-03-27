@@ -340,6 +340,7 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
       <div class="nav" id="nav-outreach" onclick="showView('outreach',this)"><span class="ic">📧</span>Email Outreach</div>
       <div class="nav" id="nav-archive" onclick="showView('archive',this)"><span class="ic">🗄</span>Archive<span class="nb" id="archiveBadge">0</span></div>
       <div class="slbl">Account</div>
+      <div class="nav" id="nav-account" onclick="showView('account',this)"><span class="ic">👤</span>Account</div>
       <div class="nav" id="nav-upgrade" onclick="showView('upgrade',this)"><span class="ic">⚡</span>Upgrade</div>
       <div class="nav" onclick="doLogout()"><span class="ic">🚪</span>Log out</div>
     </nav>
@@ -512,6 +513,50 @@ Would you be interested in getting access to these leads?
         </div>
       </div>
 
+      <!-- ACCOUNT SETTINGS VIEW -->
+      <div class="view" id="view-account">
+        <div class="spanel"><div class="ptitle">Account Settings</div></div>
+        <div class="ra">
+          <!-- Usage Stats Card -->
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.4rem;margin-bottom:1.4rem;max-width:560px">
+            <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:1rem">Daily Usage</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:1rem">
+              <div style="background:var(--bg4);border-radius:8px;padding:.8rem;text-align:center">
+                <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:4px">USED TODAY</div>
+                <div style="font-family:var(--head);font-size:1.4rem;font-weight:700;color:var(--accent)" id="usageUsed">—</div>
+              </div>
+              <div style="background:var(--bg4);border-radius:8px;padding:.8rem;text-align:center">
+                <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:4px">REMAINING</div>
+                <div style="font-family:var(--head);font-size:1.4rem;font-weight:700;color:var(--green)" id="usageRemaining">—</div>
+              </div>
+              <div style="background:var(--bg4);border-radius:8px;padding:.8rem;text-align:center">
+                <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:4px">DAILY LIMIT</div>
+                <div style="font-family:var(--head);font-size:1.4rem;font-weight:700;color:var(--text)" id="usageLimit">—</div>
+              </div>
+            </div>
+            <div style="background:var(--bg4);border-radius:4px;height:6px;overflow:hidden">
+              <div id="usageBar" style="height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;width:0%;transition:width .5s ease"></div>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--mono)" id="usageLabel">Loading usage data…</div>
+          </div>
+
+          <!-- Profile Update Card -->
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.4rem;max-width:560px">
+            <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:1rem">Update Profile</div>
+            <div style="background:rgba(242,92,92,0.1);border:1px solid rgba(242,92,92,0.2);border-radius:7px;padding:8px 12px;font-size:12px;color:var(--red);margin-bottom:1rem;display:none" id="profileErr"></div>
+            <div style="background:var(--green-dim);border:1px solid rgba(67,224,160,0.2);border-radius:7px;padding:8px 12px;font-size:12px;color:var(--green);margin-bottom:1rem;display:none" id="profileOk"></div>
+            <div style="margin-bottom:10px">
+              <div style="font-size:10px;color:var(--muted);font-family:var(--mono);letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px">Current Email</div>
+              <div style="font-size:13px;color:var(--text);font-family:var(--mono);padding:8px 10px;background:var(--bg4);border-radius:7px;border:1px solid var(--border)" id="currentEmailDisplay">—</div>
+            </div>
+            <div class="fld" style="margin-bottom:10px"><label>New Email (leave blank to keep current)</label><input type="email" id="newEmail" placeholder="new@email.com" style="max-width:100%"></div>
+            <div class="fld" style="margin-bottom:10px"><label>New Password (leave blank to keep current)</label><input type="password" id="newPassword" placeholder="New password (min 6 chars)" style="max-width:100%"></div>
+            <div class="fld" style="margin-bottom:14px"><label>Current Password (required to save changes)</label><input type="password" id="currentPassword" placeholder="Your current password" style="max-width:100%"></div>
+            <button class="btn btn-p" onclick="saveProfile()" id="saveProfileBtn" style="min-width:140px;justify-content:center">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
       <!-- UPGRADE VIEW -->
       <div class="view" id="view-upgrade">
         <div class="spanel"><div class="ptitle">Upgrade your plan</div></div>
@@ -583,6 +628,16 @@ Would you be interested in getting access to these leads?
 </div>
 
 <div class="toast" id="toast"><div class="tdot s" id="tdot"></div><span id="tmsg"></span></div>
+
+<!-- LOW CREDITS WARNING BANNER -->
+<div id="lowCreditsWarn" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(245,200,66,0.1);border:1px solid rgba(245,200,66,0.3);border-radius:12px;padding:12px 20px;z-index:998;display:none;align-items:center;gap:12px;max-width:480px;backdrop-filter:blur(8px)">
+  <span style="font-size:16px">⚠️</span>
+  <div style="flex:1">
+    <div style="font-size:13px;font-weight:500;color:var(--yellow);font-family:var(--head)">Running low on daily searches</div>
+    <div style="font-size:11.5px;color:var(--muted);margin-top:2px" id="lowCreditsMsg">You have 500 searches remaining today.</div>
+  </div>
+  <button onclick="document.getElementById('lowCreditsWarn').style.display='none'" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px">✕</button>
+</div>
 
 <script>
 const G = {
@@ -708,7 +763,8 @@ async function runSearch() {
     const arcIds=new Set(G.archived.map(a=>a.id));
     leads=leads.filter(l=>!arcIds.has(l.id));
     G.leads=leads; G.sel.clear(); G.exportLimit=res.exportLimit||0;
-    setTimeout(()=>{ pw.classList.remove('on'); if(res.debug||res.errors?.length) showEb((res.debug||res.errors.join(' | ')),'eb'); leads.length?renderLeads():showEmpty('es','No results found','Try a different term or city. Check the red error above.'); },300);
+    setTimeout(()=>{ pw.classList.remove('on'); if(res.debug||res.errors?.length) showEb((res.debug||res.errors.join(' | ')),'eb'); leads.length?renderLeads():showEmpty('es','No results found','Try a different term or city. Check the red error above.');
+      checkCreditsAfterSearch(); },300);
   } catch(e){ pw.classList.remove('on'); showEb('Search failed: '+e.message,'eb'); }
   finally{ btn.disabled=false; }
 }
@@ -1058,6 +1114,7 @@ function showView(name,el){
   if(el)el.classList.add('on');
   if(name==='crm')renderCrm();
   if(name==='saved')renderSaved();
+  if(name==='account')loadUsage();
   if(name==='archive')renderArchive();
 }
 
@@ -1130,6 +1187,75 @@ function useInComposer() {
 
 function closeOutreachMo() {
   document.getElementById('outreachMo').classList.remove('on');
+}
+
+// ── ACCOUNT SETTINGS ──────────────────────────────────────────────────────
+async function loadUsage() {
+  try {
+    const res = await api('/api/usage','GET');
+    if (res.error) return;
+    const pct = res.limit >= 999999 ? 0 : Math.round((res.used/res.limit)*100);
+    document.getElementById('usageUsed').textContent = res.used;
+    document.getElementById('usageRemaining').textContent = res.limit >= 999999 ? '∞' : res.remaining;
+    document.getElementById('usageLimit').textContent = res.limit >= 999999 ? '∞' : res.limit;
+    document.getElementById('usageBar').style.width = Math.min(pct,100)+'%';
+    document.getElementById('usageBar').style.background = pct > 80 ? 'linear-gradient(90deg,var(--yellow),var(--red))' : 'linear-gradient(90deg,var(--accent),var(--accent2))';
+    document.getElementById('usageLabel').textContent = res.limit >= 999999 ? 'Unlimited plan — no daily cap' : `${pct}% of daily limit used — resets at midnight`;
+    document.getElementById('currentEmailDisplay').textContent = G.user?.email || '—';
+
+    // Low credits warning — show when ≤500 remaining and not unlimited
+    if (res.limit < 999999 && res.remaining <= 500 && res.remaining > 0) {
+      const warn = document.getElementById('lowCreditsWarn');
+      document.getElementById('lowCreditsMsg').textContent = `Only ${res.remaining} searches left today. Resets at midnight.`;
+      warn.style.display = 'flex';
+    }
+  } catch(e) { console.warn('Usage load failed:', e); }
+}
+
+async function saveProfile() {
+  const newEmail = document.getElementById('newEmail').value.trim();
+  const newPassword = document.getElementById('newPassword').value;
+  const currentPassword = document.getElementById('currentPassword').value;
+  const errEl = document.getElementById('profileErr');
+  const okEl = document.getElementById('profileOk');
+  const btn = document.getElementById('saveProfileBtn');
+
+  errEl.style.display='none'; okEl.style.display='none';
+
+  if (!currentPassword) { errEl.textContent='Enter your current password to save changes'; errEl.style.display='block'; return; }
+  if (!newEmail && !newPassword) { errEl.textContent='Enter a new email or new password to update'; errEl.style.display='block'; return; }
+
+  btn.disabled=true; btn.textContent='Saving…';
+  try {
+    const res = await api('/api/update-profile','POST',{ newEmail:newEmail||undefined, newPassword:newPassword||undefined, currentPassword });
+    if (res.error) { errEl.textContent=res.error; errEl.style.display='block'; return; }
+    // Update session with new token
+    G.token=res.token;
+    G.user={...G.user, email:res.email, plan:res.plan, planLabel:res.planLabel};
+    localStorage.setItem('lg_token',res.token);
+    localStorage.setItem('lg_user',JSON.stringify(G.user));
+    updatePlanUI();
+    okEl.textContent='✓ Profile updated successfully!'; okEl.style.display='block';
+    document.getElementById('currentEmailDisplay').textContent=res.email;
+    document.getElementById('newEmail').value='';
+    document.getElementById('newPassword').value='';
+    document.getElementById('currentPassword').value='';
+    showToast('Profile updated','s');
+  } catch(e) { errEl.textContent='Network error — try again'; errEl.style.display='block'; }
+  finally { btn.disabled=false; btn.textContent='Save Changes'; }
+}
+
+// ── LOW CREDITS CHECK — runs after every search ────────────────────────────
+async function checkCreditsAfterSearch() {
+  try {
+    const res = await api('/api/usage','GET');
+    if (res.error || res.limit >= 999999) return;
+    if (res.remaining <= 500) {
+      const warn = document.getElementById('lowCreditsWarn');
+      document.getElementById('lowCreditsMsg').textContent = `Only ${res.remaining} searches left today. Resets at midnight.`;
+      warn.style.display = 'flex';
+    }
+  } catch(e) {}
 }
 
 let tt;
