@@ -226,6 +226,29 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
 .template-body{background:var(--bg4);border-radius:7px;padding:.8rem;font-size:12px;color:var(--muted);line-height:1.7;white-space:pre-wrap;font-family:var(--mono);cursor:pointer;border:1px solid var(--border);transition:border-color .15s}
 .template-body:hover{border-color:var(--accent)}
 
+/* COMMUNITY CHAT */
+.chat-wrap{display:flex;flex-direction:column;height:100%;overflow:hidden}
+.chat-header{padding:.9rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.online-pill{display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);color:var(--green);background:var(--green-dim);border:1px solid rgba(67,224,160,0.2);border-radius:999px;padding:3px 10px}
+.online-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
+.chat-msgs{flex:1;overflow-y:auto;padding:1rem 1.5rem;display:flex;flex-direction:column;gap:2px}
+.chat-msg{display:flex;gap:10px;padding:6px 0;align-items:flex-start}
+.chat-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent-dim);border:1px solid rgba(79,142,247,0.2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--accent);flex-shrink:0;font-family:var(--mono)}
+.chat-avatar.own{background:var(--green-dim);border-color:rgba(67,224,160,0.2);color:var(--green)}
+.chat-bubble{flex:1}
+.chat-name{font-size:11px;font-family:var(--mono);color:var(--muted);margin-bottom:2px;display:flex;align-items:center;gap:8px}
+.chat-name .you-tag{font-size:9px;background:var(--green-dim);color:var(--green);border-radius:999px;padding:1px 6px}
+.chat-time{font-size:10px;color:var(--muted);font-family:var(--mono)}
+.chat-text{font-size:13px;color:var(--text);line-height:1.6;word-break:break-word}
+.chat-system{text-align:center;font-size:11px;color:var(--muted);font-family:var(--mono);padding:4px 0;opacity:0.6}
+.chat-input-wrap{padding:.9rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
+.chat-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--body);font-size:13px;padding:9px 12px;outline:none;transition:border-color .15s;resize:none;max-height:80px}
+.chat-input:focus{border-color:var(--accent)}
+.chat-offline{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;color:var(--muted);font-size:13px}
+.topics-bar{padding:.6rem 1.5rem;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0}
+.topic-tag{padding:3px 10px;border-radius:999px;border:1px solid var(--border2);font-size:11px;color:var(--muted);cursor:pointer;transition:all .15s;font-family:var(--mono)}
+.topic-tag:hover{border-color:var(--accent);color:var(--accent)}
+
 @media(max-width:768px){.side{display:none}.sgrid{grid-template-columns:1fr 1fr}.pricing-grid{grid-template-columns:1fr}.features{grid-template-columns:1fr}.kanban{grid-template-columns:repeat(3,1fr)}.outreach-grid{grid-template-columns:1fr}.drawer{width:100%}}
 </style>
 </head>
@@ -340,6 +363,7 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
       <div class="nav" id="nav-outreach" onclick="showView('outreach',this)"><span class="ic">📧</span>Email Outreach</div>
       <div class="nav" id="nav-archive" onclick="showView('archive',this)"><span class="ic">🗄</span>Archive<span class="nb" id="archiveBadge">0</span></div>
       <div class="slbl">Account</div>
+      <div class="nav" id="nav-community" onclick="showView('community',this)"><span class="ic">💬</span>Community<span class="nb" id="onlineBadge">0</span></div>
       <div class="nav" id="nav-account" onclick="showView('account',this)"><span class="ic">👤</span>Account</div>
       <div class="nav" id="nav-upgrade" onclick="showView('upgrade',this)"><span class="ic">⚡</span>Upgrade</div>
       <div class="nav" onclick="doLogout()"><span class="ic">🚪</span>Log out</div>
@@ -509,6 +533,41 @@ Would you be interested in getting access to these leads?
           <div id="archiveEmpty" class="empty"><div style="font-size:2.5rem">🗄</div><div class="et">No archived leads</div><div class="es">Leads you archive will appear here.</div></div>
           <div class="tw" id="archiveTw" style="display:none">
             <table><thead><tr><th></th><th>Business Name</th><th>Category</th><th>Phone</th><th>Address</th><th>Rating</th><th></th></tr></thead><tbody id="archiveBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMMUNITY CHAT VIEW -->
+      <div class="view" id="view-community">
+        <div class="chat-wrap">
+          <div class="chat-header">
+            <div>
+              <div class="ptitle" style="margin-bottom:2px">Community</div>
+              <div style="font-size:12px;color:var(--muted)">Connect with other lead gen professionals</div>
+            </div>
+            <div class="online-pill"><span class="online-dot"></span><span id="onlineCount">0 online</span></div>
+          </div>
+          <div class="topics-bar">
+            <span style="font-size:10px;color:var(--muted);font-family:var(--mono);padding:3px 0;margin-right:4px">TOPICS:</span>
+            <div class="topic-tag" onclick="insertTopic('Sales strategies')">Sales strategies</div>
+            <div class="topic-tag" onclick="insertTopic('Cold outreach tips')">Cold outreach tips</div>
+            <div class="topic-tag" onclick="insertTopic('Best niches to target')">Best niches</div>
+            <div class="topic-tag" onclick="insertTopic('Pricing advice')">Pricing advice</div>
+            <div class="topic-tag" onclick="insertTopic('Tools & automation')">Tools & automation</div>
+            <div class="topic-tag" onclick="insertTopic('Success stories')">Success stories</div>
+          </div>
+          <div class="chat-msgs" id="chatMsgs">
+            <div class="chat-offline" id="chatOffline">
+              <div style="font-size:2rem">💬</div>
+              <div style="font-weight:500;color:var(--text)">Connecting to community…</div>
+              <div>Chat loads when you open this tab</div>
+            </div>
+          </div>
+          <div class="chat-input-wrap">
+            <textarea class="chat-input" id="chatInput" placeholder="Share a strategy, ask a question…" rows="1"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMsg();}"
+              oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea>
+            <button class="btn btn-p" onclick="sendChatMsg()" style="padding:9px 16px;align-self:flex-end">Send</button>
           </div>
         </div>
       </div>
@@ -1115,6 +1174,7 @@ function showView(name,el){
   if(name==='crm')renderCrm();
   if(name==='saved')renderSaved();
   if(name==='account')loadUsage();
+  if(name==='community')initChat();
   if(name==='archive')renderArchive();
 }
 
@@ -1187,6 +1247,114 @@ function useInComposer() {
 
 function closeOutreachMo() {
   document.getElementById('outreachMo').classList.remove('on');
+}
+
+// ── COMMUNITY CHAT ────────────────────────────────────────────────────────
+let chatWs = null;
+let chatConnected = false;
+let chatInited = false;
+
+function initChat() {
+  if (chatInited) return;
+  chatInited = true;
+  connectChat();
+}
+
+function connectChat() {
+  const token = G.token || '';
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const url = `${proto}//${location.host}?token=${encodeURIComponent(token)}`;
+
+  chatWs = new WebSocket(url);
+
+  chatWs.onopen = () => {
+    chatConnected = true;
+    document.getElementById('chatOffline').style.display = 'none';
+  };
+
+  chatWs.onmessage = (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.type === 'history') {
+        document.getElementById('chatMsgs').innerHTML = '';
+        document.getElementById('chatOffline').style.display = 'none';
+        data.messages.forEach(m => appendMsg(m));
+        scrollChat();
+      } else if (data.type === 'message') {
+        appendMsg(data);
+        scrollChat();
+      } else if (data.type === 'system') {
+        appendSystem(data.text);
+        scrollChat();
+      } else if (data.type === 'users') {
+        const count = data.count || 0;
+        document.getElementById('onlineCount').textContent = count + ' online';
+        document.getElementById('onlineBadge').textContent = count;
+      }
+    } catch(e) {}
+  };
+
+  chatWs.onclose = () => {
+    chatConnected = false;
+    // Reconnect after 3s
+    setTimeout(() => { if (chatInited) connectChat(); }, 3000);
+  };
+
+  chatWs.onerror = () => { chatWs.close(); };
+}
+
+function appendMsg(msg) {
+  const myEmail = G.user?.email || '';
+  const isOwn = msg.email === myEmail;
+  const initials = (msg.displayName || '?').slice(0,2).toUpperCase();
+  const time = new Date(msg.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const msgsEl = document.getElementById('chatMsgs');
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  div.innerHTML = `
+    <div class="chat-avatar ${isOwn?'own':''}">${initials}</div>
+    <div class="chat-bubble">
+      <div class="chat-name">
+        ${esc(msg.displayName)}
+        ${isOwn?'<span class="you-tag">you</span>':''}
+        <span class="chat-time">${time}</span>
+      </div>
+      <div class="chat-text">${esc(msg.text).replace(/\n/g,'<br>')}</div>
+    </div>`;
+  msgsEl.appendChild(div);
+}
+
+function appendSystem(text) {
+  const msgsEl = document.getElementById('chatMsgs');
+  const div = document.createElement('div');
+  div.className = 'chat-system';
+  div.textContent = text;
+  msgsEl.appendChild(div);
+}
+
+function scrollChat() {
+  const el = document.getElementById('chatMsgs');
+  el.scrollTop = el.scrollHeight;
+}
+
+function sendChatMsg() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!chatConnected || !chatWs || chatWs.readyState !== WebSocket.OPEN) {
+    showToast('Not connected to chat — reconnecting…','e');
+    connectChat();
+    return;
+  }
+  chatWs.send(JSON.stringify({ type: 'message', text }));
+  input.value = '';
+  input.style.height = 'auto';
+}
+
+function insertTopic(topic) {
+  const input = document.getElementById('chatInput');
+  input.value = topic + ': ';
+  input.focus();
 }
 
 // ── ACCOUNT SETTINGS ──────────────────────────────────────────────────────
