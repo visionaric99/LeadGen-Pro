@@ -1,3 +1,4 @@
+
 const express = require('express');
 const https = require('https');
 const bcrypt = require('bcryptjs');
@@ -228,7 +229,8 @@ app.get('/api/search', auth, async (req, res) => {
   let leads = [];
   console.log(`[SEARCH] q="${q}" loc="${loc}" user=${user.email}`);
   try {
-    leads = await searchGoogle(q, loc, 100);
+    const searchLimit = Math.min(parseInt(limit) || 20, 100);
+    leads = await searchGoogle(q, loc, searchLimit);
     console.log(`[SEARCH] got ${leads.length} results`);
   } catch(e) {
     console.error('[SEARCH ERROR]', e.message);
