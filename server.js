@@ -1,4 +1,3 @@
-
 const express = require('express');
 const https = require('https');
 const bcrypt = require('bcryptjs');
@@ -26,11 +25,56 @@ users.set('visionaricscaling@gmail.com', {
 
 // ── PLANS ──────────────────────────────────────────────────────────────────
 const PLANS = {
-  free:   { exports: 0,      searchLimit: 100,   label: 'Free',          price: 0 },
-  basic:  { exports: 50,     searchLimit: 100,  label: 'Basic',         price: 29 },
-  pro:    { exports: 200,    searchLimit: 100, label: 'Pro',           price: 79 },
-  agency: { exports: 999999, searchLimit: 100, label: 'Agency',        price: 199 }
+  free:   { exports: 0,      searchLimit: 100, dailySearches: 3,         label: 'Free',   price: 0   },
+  basic:  { exports: 50,     searchLimit: 100, dailySearches: 50,        label: 'Basic',  price: 29  },
+  pro:    { exports: 200,    searchLimit: 100, dailySearches: 200,       label: 'Pro',    price: 79  },
+  agency: { exports: 999999, searchLimit: 100, dailySearches: 999999,    label: 'Agency', price: 199 }
 };
+
+// ── CACHE (24hr) ───────────────────────────────────────────────────────────
+const searchCache = new Map();
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in ms
+
+function getCached(key) {
+  const entry = searchCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL) { searchCache.delete(key); return null; }
+  return entry.data;
+}
+function setCache(key, data) {
+  searchCache.set(key, { data, ts: Date.now() });
+  // Keep cache from growing too large — max 500 entries
+  if (searchCache.size > 500) {
+    const firstKey = searchCache.keys().next().value;
+    searchCache.delete(firstKey);
+  }
+}
+
+// ── RATE LIMITER (per user, per minute) ────────────────────────────────────
+const rateLimits = new Map();
+function checkRateLimit(email, maxPerMinute = 10) {
+  const now = Date.now();
+  const window = 60 * 1000;
+  const key = email;
+  if (!rateLimits.has(key)) rateLimits.set(key, []);
+  const calls = rateLimits.get(key).filter(t => now - t < window);
+  if (calls.length >= maxPerMinute) return false;
+  calls.push(now);
+  rateLimits.set(key, calls);
+  return true;
+}
+
+// ── DAILY SEARCH COUNTER ───────────────────────────────────────────────────
+const dailyCounts = new Map();
+function checkDailyLimit(email, limit) {
+  if (limit >= 999999) return true; // agency = unlimited
+  const today = new Date().toISOString().slice(0, 10);
+  const key = email + ':' + today;
+  const count = dailyCounts.get(key) || 0;
+  if (count >= limit) return false;
+  dailyCounts.set(key, count + 1);
+  return true;
+}
 
 const STRIPE_PRICES = {
   basic:  process.env.STRIPE_PRICE_BASIC  || '',
@@ -161,26 +205,51 @@ app.get('/api/search', auth, async (req, res) => {
   const user = users.get(req.user.email);
   if (!user) return res.status(401).json({ error: 'User not found' });
   const planLimits = PLANS[user.plan] || PLANS.free;
-  const searchLimit = 100;
+
+  // Rate limit — max 10 searches per minute per user
+  if (!checkRateLimit(user.email, 10)) {
+    return res.status(429).json({ error: 'Too many searches — wait a minute and try again' });
+  }
+
+  // Daily search cap per plan
+  if (!checkDailyLimit(user.email, planLimits.dailySearches)) {
+    return res.status(429).json({ error: `Daily search limit reached (${planLimits.dailySearches}/day on ${planLimits.label} plan). Upgrade for more.` });
+  }
+
+  // Check cache first — saves API calls
+  const cacheKey = `${q.toLowerCase().trim()}:${loc.toLowerCase().trim()}`;
+  const cached = getCached(cacheKey);
+  if (cached) {
+    console.log(`[CACHE HIT] ${cacheKey}`);
+    return res.json({ leads: cached, errors: [], total: cached.length, plan: user.plan, exportLimit: planLimits.exports, cached: true });
+  }
+
   const errors = [];
   let leads = [];
-  console.log(`[SEARCH] q="${q}" loc="${loc}" user=${user.email} key=${RAPID_KEY ? RAPID_KEY.slice(0,8)+'...' : 'MISSING'}`);
+  console.log(`[SEARCH] q="${q}" loc="${loc}" user=${user.email}`);
   try {
-    leads = await searchGoogle(q, loc, searchLimit);
+    leads = await searchGoogle(q, loc, 100);
     console.log(`[SEARCH] got ${leads.length} results`);
   } catch(e) {
     console.error('[SEARCH ERROR]', e.message);
     errors.push(e.message);
   }
+
   if (!leads.length && errors.length) {
     return res.json({ leads: [], errors, total: 0, plan: user.plan, exportLimit: planLimits.exports, debug: errors.join(' | ') });
   }
+
+  // Deduplicate
   const seen = new Set();
   leads = leads.filter(l => {
     const key = (l.name + l.city).toLowerCase().replace(/\s/g, '');
     if (seen.has(key)) return false;
     seen.add(key); return true;
   });
+
+  // Cache the result
+  setCache(cacheKey, leads);
+
   res.json({ leads, errors, total: leads.length, plan: user.plan, exportLimit: planLimits.exports });
 });
 
