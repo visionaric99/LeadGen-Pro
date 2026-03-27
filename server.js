@@ -1,4 +1,6 @@
 const express = require('express');
+const http = require('http');
+const { WebSocketServer, WebSocket } = require('ws');
 const https = require('https');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -301,6 +303,94 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 // ── FRONTEND ───────────────────────────────────────────────────────────────
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
-app.listen(PORT, () => {
+// ── WEBSOCKET CHAT ─────────────────────────────────────────────────────────
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
+
+// In-memory message history (last 50)
+const chatHistory = [];
+const MAX_HISTORY = 50;
+// Track connected users: ws -> {email, displayName}
+const connectedUsers = new Map();
+
+function broadcast(data, excludeWs = null) {
+  const msg = JSON.stringify(data);
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN && client !== excludeWs) {
+      client.send(msg);
+    }
+  });
+}
+
+function broadcastAll(data) {
+  const msg = JSON.stringify(data);
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) client.send(msg);
+  });
+}
+
+function getOnlineUsers() {
+  const names = [];
+  connectedUsers.forEach(u => names.push(u.displayName));
+  return names;
+}
+
+wss.on('connection', (ws, req) => {
+  // Verify JWT from query param
+  const url = new URL(req.url, 'http://localhost');
+  const token = url.searchParams.get('token');
+  let userInfo = { email: 'Anonymous', displayName: 'Anonymous' };
+
+  if (token) {
+    try {
+      const decoded = require('jsonwebtoken').verify(token, JWT_SECRET);
+      const email = decoded.email;
+      // Create display name from email
+      const name = email.split('@')[0].replace(/[._]/g,' ').replace(/\b\w/g, c => c.toUpperCase());
+      userInfo = { email, displayName: name };
+    } catch(e) {}
+  }
+
+  connectedUsers.set(ws, userInfo);
+
+  // Send chat history to new user
+  ws.send(JSON.stringify({ type: 'history', messages: chatHistory }));
+
+  // Send online users list to all
+  broadcastAll({ type: 'users', users: getOnlineUsers(), count: connectedUsers.size });
+
+  // Notify join
+  const joinMsg = { type: 'system', text: `${userInfo.displayName} joined the chat`, ts: Date.now() };
+  broadcast(joinMsg, ws);
+
+  ws.on('message', raw => {
+    try {
+      const data = JSON.parse(raw);
+      if (data.type === 'message') {
+        const text = String(data.text || '').trim().slice(0, 500);
+        if (!text) return;
+        const msg = {
+          type: 'message',
+          id: Date.now() + Math.random(),
+          displayName: userInfo.displayName,
+          email: userInfo.email,
+          text,
+          ts: Date.now()
+        };
+        chatHistory.push(msg);
+        if (chatHistory.length > MAX_HISTORY) chatHistory.shift();
+        broadcastAll(msg);
+      }
+    } catch(e) {}
+  });
+
+  ws.on('close', () => {
+    connectedUsers.delete(ws);
+    broadcast({ type: 'system', text: `${userInfo.displayName} left the chat`, ts: Date.now() });
+    broadcastAll({ type: 'users', users: getOnlineUsers(), count: connectedUsers.size });
+  });
+});
+
+server.listen(PORT, () => {
   console.log(`\n  ⚡ LeadGen Pro SaaS\n  Running at http://localhost:${PORT}\n`);
 });
