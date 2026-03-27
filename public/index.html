@@ -1148,122 +1148,68 @@ document.addEventListener('keydown',e=>{
 <!-- THREE.JS GLOBE -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-(function() {
+(function(){
   const canvas = document.getElementById('globeCanvas');
-  if (!canvas) return;
+  if(!canvas) return;
 
-  // ── CITY LIGHTS — lat/lng + intensity ─────────────────────────────────
-  // Major population centers with glow intensity
-  const LIGHTS = [
-    // North America
-    {lat:40.71,lng:-74.01,i:1.0},{lat:34.05,lng:-118.24,i:0.95},{lat:41.88,lng:-87.63,i:0.9},
-    {lat:29.76,lng:-95.37,i:0.8},{lat:33.75,lng:-84.39,i:0.75},{lat:47.61,lng:-122.33,i:0.75},
-    {lat:37.77,lng:-122.42,i:0.85},{lat:32.78,lng:-96.80,i:0.78},{lat:43.65,lng:-79.38,i:0.8},
-    {lat:45.50,lng:-73.57,i:0.75},{lat:25.77,lng:-80.19,i:0.7},{lat:39.74,lng:-104.98,i:0.65},
-    {lat:33.45,lng:-112.07,i:0.7},{lat:36.17,lng:-115.14,i:0.72},{lat:38.89,lng:-77.04,i:0.78},
-    {lat:42.36,lng:-71.06,i:0.72},{lat:29.95,lng:-90.07,i:0.65},{lat:35.47,lng:-97.51,i:0.6},
-    {lat:27.34,lng:-82.54,i:0.6},{lat:35.22,lng:-80.84,i:0.6},
-    // Mexico / Central America
-    {lat:19.43,lng:-99.13,i:0.9},{lat:20.97,lng:-89.62,i:0.5},{lat:10.48,lng:-66.87,i:0.6},
-    // South America
-    {lat:-23.55,lng:-46.63,i:0.9},{lat:-34.60,lng:-58.38,i:0.85},{lat:-33.46,lng:-70.65,i:0.75},
-    {lat:-12.05,lng:-77.04,i:0.7},{lat:-3.10,lng:-60.01,i:0.5},{lat:4.71,lng:-74.07,i:0.65},
-    {lat:-15.78,lng:-47.93,i:0.65},{lat:-30.03,lng:-51.23,i:0.6},{lat:-22.90,lng:-43.17,i:0.7},
-    {lat:-8.05,lng:-34.88,i:0.55},
-    // Europe — dense cluster
-    {lat:51.51,lng:-0.13,i:1.0},{lat:48.86,lng:2.35,i:0.95},{lat:52.52,lng:13.40,i:0.9},
-    {lat:41.38,lng:2.18,i:0.82},{lat:41.90,lng:12.50,i:0.85},{lat:48.20,lng:16.37,i:0.8},
-    {lat:50.85,lng:4.35,i:0.8},{lat:52.37,lng:4.90,i:0.82},{lat:59.33,lng:18.07,i:0.72},
-    {lat:60.17,lng:24.94,i:0.68},{lat:55.68,lng:12.57,i:0.72},{lat:53.34,lng:-6.27,i:0.7},
-    {lat:48.14,lng:11.58,i:0.82},{lat:45.46,lng:9.19,i:0.8},{lat:47.38,lng:8.54,i:0.75},
-    {lat:51.50,lng:3.72,i:0.72},{lat:50.07,lng:14.44,i:0.72},{lat:47.50,lng:19.04,i:0.75},
-    {lat:44.44,lng:26.10,i:0.65},{lat:37.98,lng:23.73,i:0.72},{lat:41.01,lng:28.95,i:0.88},
-    {lat:44.80,lng:20.46,i:0.62},{lat:50.45,lng:30.52,i:0.72},{lat:52.23,lng:21.01,i:0.72},
-    {lat:59.95,lng:30.32,i:0.85},{lat:55.75,lng:37.62,i:0.98},{lat:56.95,lng:24.11,i:0.6},
-    // Africa
-    {lat:30.04,lng:31.24,i:0.88},{lat:33.57,lng:-7.59,i:0.72},{lat:36.82,lng:10.17,i:0.68},
-    {lat:6.52,lng:3.38,i:0.82},{lat:-33.93,lng:18.42,i:0.78},{lat:-26.20,lng:28.04,i:0.82},
-    {lat:-1.29,lng:36.82,i:0.65},{lat:15.55,lng:32.53,i:0.58},{lat:14.69,lng:-17.44,i:0.55},
-    {lat:12.36,lng:-1.53,i:0.5},{lat:9.02,lng:38.74,i:0.55},{lat:-4.32,lng:15.32,i:0.52},
-    {lat:5.35,lng:-4.00,i:0.58},{lat:3.86,lng:11.52,i:0.52},{lat:-18.91,lng:47.54,i:0.5},
-    // Middle East
-    {lat:25.20,lng:55.27,i:0.9},{lat:24.69,lng:46.72,i:0.85},{lat:21.38,lng:39.86,i:0.72},
-    {lat:26.22,lng:50.59,i:0.78},{lat:23.59,lng:58.59,i:0.65},{lat:33.34,lng:44.40,i:0.68},
-    {lat:35.69,lng:51.42,i:0.88},{lat:33.89,lng:35.50,i:0.72},{lat:31.95,lng:35.93,i:0.68},
-    {lat:24.86,lng:67.01,i:0.78},{lat:31.56,lng:74.35,i:0.75},
-    // Asia
-    {lat:39.91,lng:116.39,i:1.0},{lat:31.23,lng:121.47,i:0.98},{lat:23.13,lng:113.26,i:0.95},
-    {lat:22.28,lng:114.16,i:0.92},{lat:30.57,lng:104.07,i:0.82},{lat:34.34,lng:108.94,i:0.78},
-    {lat:32.06,lng:118.78,i:0.85},{lat:36.07,lng:120.38,i:0.78},{lat:38.04,lng:114.47,i:0.75},
-    {lat:35.68,lng:139.69,i:1.0},{lat:37.57,lng:126.98,i:0.92},{lat:35.17,lng:129.07,i:0.82},
-    {lat:37.45,lng:126.70,i:0.85},{lat:1.35,lng:103.82,i:0.88},{lat:13.75,lng:100.52,i:0.88},
-    {lat:21.02,lng:105.84,i:0.78},{lat:10.82,lng:106.63,i:0.82},{lat:3.14,lng:101.69,i:0.82},
-    {lat:-6.21,lng:106.85,i:0.85},{lat:22.57,lng:88.36,i:0.82},{lat:23.72,lng:90.40,i:0.82},
-    {lat:28.70,lng:77.10,i:0.9},{lat:19.08,lng:72.88,i:0.9},{lat:12.97,lng:77.59,i:0.82},
-    {lat:13.08,lng:80.27,i:0.78},{lat:17.38,lng:78.47,i:0.75},{lat:22.57,lng:88.36,i:0.75},
-    {lat:26.85,lng:80.92,i:0.68},{lat:18.52,lng:73.86,i:0.75},{lat:23.02,lng:72.58,i:0.68},
-    {lat:43.26,lng:76.94,i:0.62},{lat:43.65,lng:87.34,i:0.58},{lat:55.16,lng:82.93,i:0.62},
-    {lat:56.85,lng:60.61,i:0.65},{lat:54.99,lng:73.37,i:0.6},{lat:55.01,lng:82.93,i:0.6},
-    {lat:57.15,lng:65.53,i:0.6},{lat:61.79,lng:34.36,i:0.58},{lat:56.32,lng:44.00,i:0.62},
-    // Australia
-    {lat:-33.87,lng:151.21,i:0.88},{lat:-37.81,lng:144.96,i:0.82},{lat:-27.47,lng:153.02,i:0.72},
-    {lat:-31.95,lng:115.86,i:0.7},{lat:-34.93,lng:138.60,i:0.65},
-    // NZ
-    {lat:-36.86,lng:174.77,i:0.65},{lat:-41.29,lng:174.78,i:0.55}
+  // Connection nodes (major cities)
+  const NODES = [
+    {lat:40.71,lng:-74.01},{lat:34.05,lng:-118.24},{lat:41.88,lng:-87.63},
+    {lat:51.51,lng:-0.13},{lat:48.86,lng:2.35},{lat:52.52,lng:13.40},
+    {lat:55.75,lng:37.62},{lat:35.68,lng:139.69},{lat:39.91,lng:116.39},
+    {lat:31.23,lng:121.47},{lat:25.20,lng:55.27},{lat:1.35,lng:103.82},
+    {lat:19.08,lng:72.88},{lat:-23.55,lng:-46.63},{lat:-33.87,lng:151.21},
+    {lat:6.52,lng:3.38},{lat:-26.20,lng:28.04},{lat:30.04,lng:31.24},
+    {lat:37.57,lng:126.98},{lat:13.75,lng:100.52},{lat:19.43,lng:-99.13},
+    {lat:-34.60,lng:-58.38},{lat:41.01,lng:28.95},{lat:28.70,lng:77.10},
+    {lat:43.65,lng:-79.38},{lat:47.61,lng:-122.33},{lat:3.14,lng:101.69},
+    {lat:-6.21,lng:106.85},{lat:23.13,lng:113.26},{lat:22.28,lng:114.16}
   ];
 
-  function ll2v(lat, lng, r) {
-    const phi = (90-lat)*Math.PI/180;
-    const theta = (lng+180)*Math.PI/180;
-    return new THREE.Vector3(
-      -r*Math.sin(phi)*Math.cos(theta),
-       r*Math.cos(phi),
-       r*Math.sin(phi)*Math.sin(theta)
-    );
+  function ll2v(lat,lng,r){
+    const phi=(90-lat)*Math.PI/180, theta=(lng+180)*Math.PI/180;
+    return new THREE.Vector3(-r*Math.sin(phi)*Math.cos(theta), r*Math.cos(phi), r*Math.sin(phi)*Math.sin(theta));
   }
 
-  let scene, camera, renderer, globeGroup, lightMeshes=[], pf=0;
-  let isDragging=false, prev={x:0,y:0};
+  function buildTexture(){
+    const S=2048;
+    const tc=document.createElement('canvas'); tc.width=S; tc.height=S;
+    const ctx=tc.getContext('2d');
 
-  function buildNightTexture() {
-    const S = 2048;
-    const tc = document.createElement('canvas');
-    tc.width=S; tc.height=S;
-    const ctx = tc.getContext('2d');
-
-    // Pure black base = ocean at night
-    ctx.fillStyle = '#000000';
+    // Deep teal-blue ocean base
+    const oceanGrad = ctx.createRadialGradient(S*0.4,S*0.4,0,S*0.5,S*0.5,S*0.7);
+    oceanGrad.addColorStop(0,'#0a2a3a');
+    oceanGrad.addColorStop(0.5,'#061820');
+    oceanGrad.addColorStop(1,'#030e14');
+    ctx.fillStyle=oceanGrad;
     ctx.fillRect(0,0,S,S);
 
-    function uv(lat,lng){ return [((lng+180)/360)*S, ((90-lat)/180)*S]; }
+    function uv(lat,lng){ return [((lng+180)/360)*S,((90-lat)/180)*S]; }
 
-    // ── LAND MASSES — very dark charcoal, barely visible ─────────────────
-    ctx.fillStyle = 'rgba(18,18,22,1)';
-    ctx.strokeStyle = 'rgba(35,35,45,0.6)';
-    ctx.lineWidth = 1;
-
+    // ── LAND SHAPES — amber/gold fill ─────────────────────────────────
     const LAND = [
       // North America
       [[-168,72],[-155,60],[-130,54],[-124,49],[-124,37],[-117,32],[-110,23],[-90,16],[-83,10],[-77,8],[-80,9],[-88,16],[-90,29],[-97,26],[-106,32],[-117,32],[-120,34],[-124,40],[-124,49],[-130,54],[-140,58],[-148,60],[-158,58],[-168,66],[-168,72]],
-      [[-168,72],[-168,62],[-162,58],[-155,58],[-148,60],[-140,60],[-130,56],[-130,54],[-140,58],[-148,60],[-155,60],[-162,62],[-168,66],[-168,72]],
+      [[-168,72],[-168,62],[-162,58],[-155,58],[-148,60],[-140,58],[-130,54],[-140,58],[-148,60],[-155,60],[-162,62],[-168,66],[-168,72]],
       // Greenland
       [[-52,83],[-20,76],[-18,73],[-26,68],[-44,60],[-56,68],[-58,75],[-52,83]],
       // South America
       [[-82,9],[-68,12],[-52,4],[-38,-12],[-38,-22],[-44,-23],[-52,-34],[-58,-38],[-66,-44],[-72,-50],[-64,-40],[-62,-28],[-65,-18],[-72,-12],[-80,0],[-82,9]],
-      // Europe + Britain
-      [[-10,36],[-8,38],[-4,44],[0,44],[8,44],[14,42],[28,42],[36,38],[28,36],[18,38],[8,40],[0,44],[-8,44],[-10,36]],
+      // Europe
+      [[-10,36],[-4,44],[0,44],[8,44],[14,42],[28,42],[36,38],[28,36],[8,40],[0,44],[-8,44],[-10,36]],
       [[0,51],[8,55],[14,56],[20,60],[18,64],[14,68],[22,70],[30,70],[38,68],[28,60],[16,56],[4,56],[0,54],[0,51]],
       [[4,58],[14,56],[18,58],[20,60],[18,65],[10,63],[8,58],[4,58]],
       [[-6,50],[0,51],[0,54],[-4,58],[-6,58],[-6,54],[-4,52],[-2,50],[-6,50]],
+      [[-8,52],[-6,52],[-6,54],[-8,56],[-10,54],[-8,52]],
       // Africa
       [[-18,15],[-15,0],[-10,-18],[-18,-35],[-34,-20],[-42,12],[-38,22],[-28,30],[-18,38],[-6,38],[14,38],[32,28],[42,12],[42,8],[38,-10],[28,-34],[14,-24],[4,-4],[-14,10],[-18,15]],
-      // Middle East + Arabian Peninsula
+      // Middle East
       [[28,36],[36,38],[44,36],[56,22],[56,14],[44,12],[36,22],[34,28],[28,30],[28,36]],
-      // Russia + Central Asia
+      // Russia
       [[28,68],[60,72],[90,72],[120,70],[140,68],[162,62],[168,54],[148,48],[130,44],[110,54],[90,54],[70,54],[50,56],[32,56],[28,58],[28,68]],
       // India
       [[60,22],[80,28],[88,22],[92,22],[85,12],[78,8],[72,8],[66,22],[60,22]],
-      // SE Asia mainland
+      // SE Asia
       [[98,16],[108,20],[110,14],[104,2],[98,2],[96,4],[98,16]],
       // China
       [[76,36],[90,48],[110,54],[132,48],[136,44],[128,34],[118,24],[108,22],[92,22],[84,28],[76,36]],
@@ -1271,122 +1217,159 @@ document.addEventListener('keydown',e=>{
       [[130,32],[136,36],[140,36],[144,40],[144,44],[140,44],[134,36],[130,32]],
       // Australia
       [[114,-22],[128,-14],[132,-12],[140,-14],[146,-10],[152,-24],[150,-36],[140,-38],[132,-32],[114,-22]],
-      // Indonesia Sumatra+Java
-      [[96,4],[106,-2],[106,-6],[98,2],[96,4]],[[106,-6],[114,-8],[114,-8],[108,-8],[106,-6]],
+      // Indonesia
+      [[96,4],[106,-2],[106,-6],[98,2],[96,4]],
+      [[106,-6],[114,-8],[108,-8],[106,-6]],
       // Madagascar
       [[44,-12],[50,-14],[50,-20],[46,-24],[44,-14],[44,-12]],
       // Iceland
       [[-24,64],[-14,64],[-14,66],[-22,66],[-24,64]],
-      // New Zealand
+      // NZ
       [[172,-34],[178,-40],[174,-44],[170,-46],[172,-40],[174,-36],[172,-34]],
-      // Philippines
-      [[120,18],[124,16],[122,10],[118,12],[120,16],[120,18]],
-      // Taiwan
-      [[120,22],[122,22],[122,24],[120,24],[120,22]],
     ];
 
-    LAND.forEach(shape => {
+    // Draw land with amber/gold — darker version
+    LAND.forEach(shape=>{
       if(shape.length<3) return;
       ctx.beginPath();
       const [x0,y0]=uv(shape[0][1],shape[0][0]);
       ctx.moveTo(x0,y0);
       for(let i=1;i<shape.length;i++){ const [x,y]=uv(shape[i][1],shape[i][0]); ctx.lineTo(x,y); }
-      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.closePath();
+
+      // Gold fill — darker, more muted than reference
+      const lg=ctx.createLinearGradient(0,0,S,S);
+      lg.addColorStop(0,'rgba(140,90,20,0.92)');
+      lg.addColorStop(0.5,'rgba(160,105,25,0.88)');
+      lg.addColorStop(1,'rgba(110,70,15,0.85)');
+      ctx.fillStyle=lg;
+      ctx.fill();
+
+      // Subtle amber border
+      ctx.strokeStyle='rgba(180,130,40,0.5)';
+      ctx.lineWidth=2.5;
+      ctx.stroke();
     });
 
-    // ── CITY LIGHTS — warm glow clusters ─────────────────────────────────
-    LIGHTS.forEach(c => {
-      const [cx,cy] = uv(c.lat, c.lng);
-      const r = 6 + c.i*14;
+    // ── NETWORK LINES — teal/cyan connecting dots ──────────────────────
+    // Draw arc connections between major nodes on the texture
+    const connections = [
+      [0,3],[0,1],[0,2],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],
+      [3,23],[1,13],[2,11],[9,18],[7,19],[10,11],[11,27],[12,23],
+      [13,21],[14,22],[15,16],[16,17],[6,22],[4,22],[0,24],[1,25]
+    ];
 
-      // Outer soft warm glow
-      const g1 = ctx.createRadialGradient(cx,cy,0,cx,cy,r*2.5);
-      g1.addColorStop(0, `rgba(255,220,80,${c.i*0.35})`);
-      g1.addColorStop(0.4, `rgba(255,160,40,${c.i*0.18})`);
-      g1.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = g1;
-      ctx.beginPath(); ctx.arc(cx,cy,r*2.5,0,Math.PI*2); ctx.fill();
-
-      // Mid warm glow
-      const g2 = ctx.createRadialGradient(cx,cy,0,cx,cy,r*1.2);
-      g2.addColorStop(0, `rgba(255,230,120,${c.i*0.7})`);
-      g2.addColorStop(0.5, `rgba(255,180,60,${c.i*0.4})`);
-      g2.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = g2;
-      ctx.beginPath(); ctx.arc(cx,cy,r*1.2,0,Math.PI*2); ctx.fill();
-
-      // Bright core
-      const g3 = ctx.createRadialGradient(cx,cy,0,cx,cy,r*0.4);
-      g3.addColorStop(0, `rgba(255,248,200,${c.i})`);
-      g3.addColorStop(1, `rgba(255,220,100,0)`);
-      ctx.fillStyle = g3;
-      ctx.beginPath(); ctx.arc(cx,cy,r*0.4,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(0,200,255,0.18)';
+    ctx.lineWidth=1.5;
+    connections.forEach(([a,b])=>{
+      const na=NODES[a], nb=NODES[b];
+      const [ax,ay]=uv(na.lat,na.lng);
+      const [bx,by]=uv(nb.lat,nb.lng);
+      // Only draw if not wrapping around edge
+      if(Math.abs(ax-bx)<S*0.5){
+        ctx.beginPath();
+        const mx=(ax+bx)/2, my=(ay+by)/2 - 40;
+        ctx.moveTo(ax,ay);
+        ctx.quadraticCurveTo(mx,my,bx,by);
+        ctx.stroke();
+      }
     });
 
-    // Slight noise/stars on ocean for depth
-    for(let i=0;i<400;i++){
+    // ── NODE DOTS on texture ──────────────────────────────────────────
+    NODES.forEach(n=>{
+      const [cx,cy]=uv(n.lat,n.lng);
+      // Outer glow
+      const g=ctx.createRadialGradient(cx,cy,0,cx,cy,12);
+      g.addColorStop(0,'rgba(180,240,255,0.6)');
+      g.addColorStop(0.4,'rgba(100,200,255,0.25)');
+      g.addColorStop(1,'rgba(0,150,220,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,12,0,Math.PI*2); ctx.fill();
+      // Core dot
+      ctx.fillStyle='rgba(220,250,255,0.9)';
+      ctx.beginPath(); ctx.arc(cx,cy,2.5,0,Math.PI*2); ctx.fill();
+    });
+
+    // ── OCEAN TEAL SHIMMER — subtle highlights ─────────────────────────
+    for(let i=0;i<80;i++){
       const x=Math.random()*S, y=Math.random()*S;
-      const b=Math.random()*0.3+0.05;
-      ctx.fillStyle=`rgba(180,200,255,${b})`;
-      ctx.fillRect(x,y,1,1);
+      const r=Math.random()*30+10;
+      const g2=ctx.createRadialGradient(x,y,0,x,y,r);
+      g2.addColorStop(0,`rgba(0,160,200,${Math.random()*0.08+0.02})`);
+      g2.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=g2; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
     }
 
     return new THREE.CanvasTexture(tc);
   }
 
-  function init() {
-    scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(38,1,0.1,1000);
-    camera.position.z = 3.0;
+  let scene,camera,renderer,globeGroup,nodeMeshes=[],pf=0;
+  let isDragging=false,prev={x:0,y:0};
 
-    renderer = new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+  function init(){
+    scene=new THREE.Scene();
+    camera=new THREE.PerspectiveCamera(38,1,0.1,1000);
+    camera.position.z=3.0;
+    renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
     renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
     renderer.setSize(860,860);
     renderer.setClearColor(0x000000,0);
 
-    globeGroup = new THREE.Group();
+    globeGroup=new THREE.Group();
     scene.add(globeGroup);
 
-    // Night texture globe
-    const nightTex = buildNightTexture();
+    // Main globe with texture
+    const tex=buildTexture();
     globeGroup.add(new THREE.Mesh(
       new THREE.SphereGeometry(1.0,64,64),
-      new THREE.MeshBasicMaterial({ map: nightTex })
+      new THREE.MeshPhongMaterial({
+        map:tex,
+        shininess:60,
+        specular:new THREE.Color(0x0a3050),
+        emissive:new THREE.Color(0x020810),
+        emissiveIntensity:0.3
+      })
     ));
 
-    // Very faint grid overlay
-    const gm = new THREE.LineBasicMaterial({color:0x0a1830,transparent:true,opacity:0.15});
-    for(let lat=-60;lat<=60;lat+=30){
-      const pts=[];
-      for(let lng=-180;lng<=180;lng+=3) pts.push(ll2v(lat,lng,1.003));
-      globeGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),gm.clone()));
-    }
-    for(let lng=-180;lng<=150;lng+=30){
-      const pts=[];
-      for(let lat=-80;lat<=80;lat+=3) pts.push(ll2v(lat,lng,1.003));
-      globeGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),gm.clone()));
-    }
+    // Glass-like outer shell — subtle refraction feel
+    globeGroup.add(new THREE.Mesh(
+      new THREE.SphereGeometry(1.01,64,64),
+      new THREE.MeshPhongMaterial({
+        color:0x0a3060,
+        transparent:true,
+        opacity:0.06,
+        shininess:120,
+        specular:new THREE.Color(0x4499cc),
+        side:THREE.FrontSide
+      })
+    ));
 
-    // Atmosphere glow — subtle blue rim
-    globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(1.06,32,32),
-      new THREE.MeshBasicMaterial({color:0x1a3a6e,transparent:true,opacity:0.07,side:THREE.BackSide})));
-    globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(1.14,32,32),
-      new THREE.MeshBasicMaterial({color:0x2255aa,transparent:true,opacity:0.03,side:THREE.BackSide})));
-    globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(1.24,32,32),
-      new THREE.MeshBasicMaterial({color:0x4f8ef7,transparent:true,opacity:0.012,side:THREE.BackSide})));
-
-    // 3D pulsing light dots on top of texture for extra glow effect
-    LIGHTS.slice(0,40).forEach((c,i) => {
-      const pos = ll2v(c.lat,c.lng,1.008);
-      const glow = new THREE.Mesh(
-        new THREE.SphereGeometry(0.013,8,8),
-        new THREE.MeshBasicMaterial({color:0xffdd66,transparent:true,opacity:0.0})
+    // 3D node dots on surface — pulsing
+    NODES.forEach((n,i)=>{
+      const pos=ll2v(n.lat,n.lng,1.015);
+      const glow=new THREE.Mesh(
+        new THREE.SphereGeometry(0.014,8,8),
+        new THREE.MeshBasicMaterial({color:0x88ddff,transparent:true,opacity:0.0})
       );
       glow.position.copy(pos);
-      glow.userData = {offset:i*0.35, base: c.i};
+      glow.userData={offset:i*0.38};
       globeGroup.add(glow);
-      lightMeshes.push(glow);
+      nodeMeshes.push(glow);
     });
+
+    // Atmosphere — blue-teal rim glow like reference image
+    globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(1.05,32,32),
+      new THREE.MeshBasicMaterial({color:0x0a4060,transparent:true,opacity:0.12,side:THREE.BackSide})));
+    globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(1.12,32,32),
+      new THREE.MeshBasicMaterial({color:0x0066aa,transparent:true,opacity:0.06,side:THREE.BackSide})));
+    globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(1.22,32,32),
+      new THREE.MeshBasicMaterial({color:0x4f8ef7,transparent:true,opacity:0.02,side:THREE.BackSide})));
+
+    // Lighting — key light from top-right like reference
+    const key=new THREE.DirectionalLight(0x6699bb,0.6);
+    key.position.set(4,3,4); scene.add(key);
+    const fill=new THREE.DirectionalLight(0x002244,0.3);
+    fill.position.set(-3,-2,-3); scene.add(fill);
+    scene.add(new THREE.AmbientLight(0x081828,1.5));
 
     canvas.addEventListener('mousedown',e=>{isDragging=true;prev={x:e.clientX,y:e.clientY};canvas.style.cursor='grabbing';});
     canvas.addEventListener('mousemove',e=>{
@@ -1397,7 +1380,6 @@ document.addEventListener('keydown',e=>{
     });
     canvas.addEventListener('mouseup',()=>{isDragging=false;canvas.style.cursor='grab';});
     canvas.addEventListener('mouseleave',()=>{isDragging=false;});
-
     animate();
   }
 
@@ -1405,10 +1387,10 @@ document.addEventListener('keydown',e=>{
     requestAnimationFrame(animate);
     pf+=0.016;
     if(!isDragging) globeGroup.rotation.y+=0.0006;
-    lightMeshes.forEach(g=>{
-      const p=0.5+Math.sin(pf+g.userData.offset)*0.5;
-      g.material.opacity=p*0.08*g.userData.base;
-      g.scale.setScalar(0.8+p*0.4);
+    nodeMeshes.forEach(g=>{
+      const p=0.4+Math.sin(pf+g.userData.offset)*0.6;
+      g.material.opacity=p*0.25;
+      g.scale.setScalar(0.7+p*0.5);
     });
     renderer.render(scene,camera);
   }
