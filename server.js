@@ -330,9 +330,21 @@ app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.ht
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-// In-memory message history (last 50)
-const chatHistory = [];
-const MAX_HISTORY = 50;
+// Persistent chat history — saved to disk
+const fs = require('fs');
+const CHAT_FILE = './chat_history.json';
+const MAX_HISTORY = 200;
+
+function loadChatHistory() {
+  try {
+    if (fs.existsSync(CHAT_FILE)) return JSON.parse(fs.readFileSync(CHAT_FILE,'utf8'));
+  } catch(e) {}
+  return [];
+}
+function saveChatHistory(history) {
+  try { fs.writeFileSync(CHAT_FILE, JSON.stringify(history)); } catch(e) {}
+}
+const chatHistory = loadChatHistory();
 // Track connected users: ws -> {email, displayName}
 const connectedUsers = new Map();
 
@@ -402,6 +414,7 @@ wss.on('connection', (ws, req) => {
         };
         chatHistory.push(msg);
         if (chatHistory.length > MAX_HISTORY) chatHistory.shift();
+        saveChatHistory(chatHistory);
         broadcastAll(msg);
       }
     } catch(e) {}
