@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LeadGen Pro</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700https://fonts.googleapis.com/css2?family=Michroma&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swapfamily=DM+Sans:wght@300;400;500https://fonts.googleapis.com/css2?family=Michroma&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swapfamily=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swapfamily=DM+Sans:wght@300;400;500https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swapfamily=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#08090d;--bg2:#0f1018;--bg3:#181923;--bg4:#1f2130;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);--text:#eeeef5;--muted:#7a7a9a;--accent:#4f8ef7;--accent2:#43e0a0;--accent-dim:rgba(79,142,247,0.13);--green:#43e0a0;--green-dim:rgba(67,224,160,0.12);--red:#f25c5c;--yellow:#f5c842;--orange:#f5934a;--head:'Michroma',sans-serif;--body:'DM Sans',sans-serif;--mono:'DM Mono',monospace}
+:root{--bg:#08090d;--bg2:#0f1018;--bg3:#181923;--bg4:#1f2130;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);--text:#eeeef5;--muted:#7a7a9a;--accent:#4f8ef7;--accent2:#43e0a0;--accent-dim:rgba(79,142,247,0.13);--green:#43e0a0;--green-dim:rgba(67,224,160,0.12);--red:#f25c5c;--yellow:#f5c842;--orange:#f5934a;--head:'Oxanium',sans-serif;--body:'DM Sans',sans-serif;--mono:'DM Mono',monospace}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:15px}body{background:var(--bg);color:var(--text);font-family:var(--body);min-height:100vh;display:flex;flex-direction:column}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
@@ -51,7 +51,7 @@ html{font-size:15px}body{background:var(--bg);color:var(--text);font-family:var(
 
 /* LANDING */
 .landing{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1.5rem;text-align:center}
-.landing-title{font-family:var(--head);font-size:clamp(1.8rem,4.5vw,3.2rem);font-weight:400;letter-spacing:.02em;line-height:1.2;margin-bottom:1rem}
+.landing-title{font-family:var(--head);font-size:clamp(2rem,5vw,3.6rem);font-weight:800;letter-spacing:-.01em;line-height:1.1;margin-bottom:1rem}
 .landing-title span{color:var(--accent)}
 .landing-sub{color:var(--muted);font-size:1rem;max-width:480px;line-height:1.7;margin-bottom:2rem}
 .landing-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:3rem}
@@ -200,6 +200,24 @@ td.lk a{color:inherit;text-decoration:none}td.lk a:hover{text-decoration:underli
 .tdot{width:7px;height:7px;border-radius:50%}
 .tdot.s{background:var(--green)}.tdot.i{background:var(--accent)}.tdot.e{background:var(--red)}
 
+/* HIGH OPPORTUNITY BADGE */
+.ho-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(245,200,66,0.12);color:var(--yellow);border:1px solid rgba(245,200,66,0.25);border-radius:999px;padding:2px 8px;font-size:10px;font-family:var(--mono);font-weight:500;white-space:nowrap}
+.ho-badge::before{content:'★';font-size:9px}
+tbody tr.high-opp{border-left:2px solid var(--yellow)}
+
+/* OUTREACH MODAL */
+.outreach-modal{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:1.8rem;width:540px;max-width:95vw;animation:fadein .2s ease}
+.outreach-result{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1.1rem;margin-top:1rem;font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap;font-family:var(--body)}
+.copy-btn{display:inline-flex;align-items:center;gap:6px;margin-top:.8rem}
+
+/* PREMIUM UX POLISH */
+.spanel{padding:1.4rem 1.8rem;border-bottom:1px solid var(--border)}
+.ptitle{font-family:var(--head);font-size:1.25rem;font-weight:700;letter-spacing:.02em;margin-bottom:.9rem;text-transform:uppercase}
+.ra{flex:1;overflow-y:auto;padding:1.4rem 1.8rem}
+.side{padding:1.4rem 1rem}
+.nav{padding:8px 10px;border-radius:8px;font-size:12.5px}
+.slbl{font-size:9px;letter-spacing:.12em;padding:10px 10px 4px}
+
 /* OUTREACH VIEW */
 .outreach-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;padding:1.2rem 1.5rem;overflow-y:auto}
 .ocard{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1.1rem}
@@ -336,8 +354,8 @@ td.lk a{color:inherit;text-decoration:none}td.lk a:hover{text-decoration:underli
           <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-size:12.5px;color:var(--muted)" onclick="toggleFilter('noWebsite')">
               <div style="position:relative;width:36px;height:20px">
-                <div id="noWebTrack" style="width:36px;height:20px;border-radius:999px;background:var(--accent);border:1px solid var(--border2);transition:background .2s"></div>
-                <div id="noWebThumb" style="position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:all .2s;pointer-events:none;transform:translateX(16px)"></div>
+                <div id="noWebTrack" style="width:36px;height:20px;border-radius:999px;background:var(--bg4);border:1px solid var(--border2);transition:background .2s"></div>
+                <div id="noWebThumb" style="position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--muted);transition:all .2s;pointer-events:none"></div>
               </div>
               Only show businesses <strong style="color:var(--text);margin-left:3px">without a website</strong>
             </label>
@@ -523,6 +541,28 @@ Would you be interested in getting access to these leads?
   </div>
 </div>
 
+<!-- OUTREACH MODAL -->
+<div class="mo" id="outreachMo">
+  <div class="outreach-modal">
+    <div class="mt" style="font-family:var(--head)">Generate Outreach Message</div>
+    <div class="ms" id="outreachBizName">Crafting a personalized cold message…</div>
+    <div id="outreachLoading" style="color:var(--muted);font-size:13px;padding:1rem 0">
+      <span id="outreachDots">Generating</span>
+    </div>
+    <div id="outreachResult" style="display:none">
+      <div class="outreach-result" id="outreachText"></div>
+      <div style="display:flex;gap:8px;margin-top:.9rem">
+        <button class="btn btn-g copy-btn" onclick="copyOutreach()">📋 Copy Message</button>
+        <button class="btn btn-p" onclick="useInComposer()">📧 Open in Composer</button>
+        <button class="btn btn-o" onclick="regenerateOutreach()">↻ Regenerate</button>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem">
+      <button class="btn btn-o" onclick="closeOutreachMo()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- EXPORT MODAL -->
 <div class="mo" id="mo">
   <div class="modal">
@@ -540,7 +580,7 @@ const G = {
   leads:[], saved:[], archived:[], sel:new Set(), cur:null,
   bulkLeads:[], bulkRows:[],
   token:localStorage.getItem('lg_token'),
-  filters:{noWebsite:true,noPhone:false},
+  filters:{noWebsite:false,noPhone:false},
   user:JSON.parse(localStorage.getItem('lg_user')||'null'),
   exportLimit:0, exportPool:[]
 };
@@ -767,16 +807,18 @@ function renderLeads() {
   const _filtered=applyFilters(G.leads);
   document.getElementById('rc').textContent=`${_filtered.length} of ${G.leads.length} businesses found`;
   document.getElementById('lb').innerHTML=_filtered.map(l=>`
-    <tr class="${G.sel.has(l.id)?'sel':''}" onclick="openD('${esc(l.id)}','main')">
+    <tr class="${G.sel.has(l.id)?'sel':''} ${!l.website?'high-opp':''}" onclick="openD('${esc(l.id)}','main')">
       <td onclick="event.stopPropagation()"><input type="checkbox" ${G.sel.has(l.id)?'checked':''} style="accent-color:var(--accent);cursor:pointer" onchange="toggleSel('${esc(l.id)}',this)"></td>
-      <td class="nm">${esc(l.name)}</td><td class="mu">${esc(l.cat)}</td>
+      <td class="nm">${esc(l.name)}${!l.website?' <span class=\"ho-badge\">High Opportunity</span>':''}</td>
+      <td class="mu">${esc(l.cat)}</td>
       <td class="mu">${esc(l.phone)||'—'}</td>
-      <td class="lk">${l.website?`<a href="${esc(l.website)}" target="_blank" onclick="event.stopPropagation()">${esc(l.website.replace(/^https?:\/\//,'').slice(0,22))}</a>`:'—'}</td>
+      <td class="${l.website?'lk':'mu'}">${l.website?`<a href="${esc(l.website)}" target="_blank" onclick="event.stopPropagation()">${esc(l.website.replace(/^https?:\/\//,'').slice(0,22))}</a>`:'<span style="color:var(--muted);font-size:11px">No website</span>'}</td>
       <td class="mu" title="${esc(l.address)}">${esc(l.address.slice(0,26))}${l.address.length>26?'…':''}</td>
       <td class="mu">${l.rating?l.rating+'★':'—'}</td>
       <td><span class="pill ${psc(l.score)}">${l.score}</span></td>
-      <td style="display:flex;gap:4px">
+      <td style="display:flex;gap:4px;flex-wrap:wrap">
         <button class="btn btn-g" style="padding:3px 8px;font-size:10px" onclick="event.stopPropagation();quickSave('${esc(l.id)}','main')">Save</button>
+        <button class="btn btn-p" style="padding:3px 8px;font-size:10px" onclick="event.stopPropagation();openOutreachModal('${esc(l.id)}','main')">✉ Outreach</button>
         <button class="btn btn-y" style="padding:3px 8px;font-size:10px" onclick="event.stopPropagation();archiveLead('${esc(l.id)}','main')">Archive</button>
       </td>
     </tr>`).join('');
@@ -1020,6 +1062,67 @@ async function api(url,method='GET',body=null){
 }
 
 // ── TOAST ──────────────────────────────────────────────────────────────────
+// ── OUTREACH MESSAGE GENERATOR ────────────────────────────────────────────
+let outreachLead = null;
+
+function openOutreachModal(id, pool='main') {
+  const src = pool==='bulk'?G.bulkLeads:pool==='saved'?G.saved:G.leads;
+  const l = src.find(x=>x.id===id) || G.leads.find(x=>x.id===id) || G.saved.find(x=>x.id===id);
+  if(!l) return;
+  outreachLead = l;
+  document.getElementById('outreachMo').classList.add('on');
+  document.getElementById('outreachBizName').textContent = l.name + ' · ' + l.city;
+  document.getElementById('outreachLoading').style.display = 'block';
+  document.getElementById('outreachResult').style.display = 'none';
+  generateOutreachMessage(l);
+}
+
+function generateOutreachMessage(l) {
+  const hasWebsite = !!(l.website && l.website.trim());
+  const noWebsiteAngle = !hasWebsite;
+  const messages = noWebsiteAngle ? [
+    `Hey ${l.name} team,\n\nI was searching for ${l.cat.toLowerCase()} services in ${l.city} and noticed you don't have a website yet — which honestly surprised me given how strong your reputation looks.\n\nI build fast, affordable websites for local businesses like yours that turn searchers into paying customers. Most of my clients see new inquiries within the first 30 days.\n\nWorth a quick 10-min call this week?`,
+    `Hi there,\n\nI came across ${l.name} while researching ${l.cat.toLowerCase()} businesses in ${l.city}. You've clearly built something people love — but without a website, you're leaving a lot of customers on the table who search online first.\n\nI specialize in getting local businesses like yours found on Google and converting that traffic into real revenue.\n\nWould you be open to a free 15-minute strategy call?`,
+    `Hello ${l.name},\n\nQuick note — I help ${l.cat.toLowerCase()} businesses in ${l.city} get more customers through professional websites and local SEO.\n\nI noticed you're not currently online, which means you're likely missing out on the 70%+ of people who search before they buy.\n\nI'd love to show you what's possible. Any chance you have 10 minutes this week?`
+  ] : [
+    `Hi ${l.name} team,\n\nI came across your business in ${l.city} and wanted to reach out. I work with ${l.cat.toLowerCase()} businesses to help them generate more leads and scale their online presence.\n\nI have a few ideas specific to your market that I think could make a real difference.\n\nWould you be open to a quick call this week?`,
+    `Hello,\n\nI specialize in helping ${l.cat.toLowerCase()} businesses in ${l.city} grow their client base through targeted digital marketing.\n\nI've helped similar businesses in your area increase their monthly inquiries significantly — and I think there's a real opportunity here for ${l.name}.\n\nDo you have 15 minutes for a quick intro call?`
+  ];
+  const msg = messages[Math.floor(Math.random() * messages.length)];
+  setTimeout(() => {
+    document.getElementById('outreachLoading').style.display = 'none';
+    document.getElementById('outreachText').textContent = msg;
+    document.getElementById('outreachResult').style.display = 'block';
+  }, 900);
+}
+
+function regenerateOutreach() {
+  if(!outreachLead) return;
+  document.getElementById('outreachLoading').style.display = 'block';
+  document.getElementById('outreachResult').style.display = 'none';
+  generateOutreachMessage(outreachLead);
+}
+
+function copyOutreach() {
+  const txt = document.getElementById('outreachText').textContent;
+  navigator.clipboard.writeText(txt).then(() => showToast('Message copied!','s'));
+}
+
+function useInComposer() {
+  const txt = document.getElementById('outreachText').textContent;
+  const email = outreachLead?.email || '';
+  closeOutreachMo();
+  showView('outreach', document.getElementById('nav-outreach'));
+  document.getElementById('outTo').value = email;
+  document.getElementById('outSubject').value = outreachLead ? `Quick note for ${outreachLead.name}` : '';
+  document.getElementById('outBody').value = txt;
+  showToast('Message loaded in composer','s');
+}
+
+function closeOutreachMo() {
+  document.getElementById('outreachMo').classList.remove('on');
+}
+
 let tt;
 function showToast(msg,type='s'){document.getElementById('tmsg').textContent=msg;document.getElementById('tdot').className='tdot '+type;const t=document.getElementById('toast');t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2800);}
 
