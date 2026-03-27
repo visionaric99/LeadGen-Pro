@@ -1,0 +1,782 @@
+const G = {
+  leads:[], saved:[], archived:[], sel:new Set(), cur:null,
+  bulkLeads:[], bulkRows:[],
+  token:localStorage.getItem('lg_token'),
+  filters:{noWebsite:false,noPhone:false},
+  user:JSON.parse(localStorage.getItem('lg_user')||'null'),
+  exportLimit:0, exportPool:[]
+};
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  // Load saved/archived from localStorage
+  G.saved = JSON.parse(localStorage.getItem('lg_saved')||'[]');
+  G.archived = JSON.parse(localStorage.getItem('lg_archived')||'[]');
+  updateBadges();
+  initBulkRows();
+  if (G.token && G.user) {
+    showDashboard();
+    if (location.search.includes('upgraded=true')) { refreshUser(); showToast('Plan upgraded!','s'); history.replaceState({},'','/'); }
+  } else { showPage('landing'); }
+
+  // Enter key search
+  ['q','loc'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') runSearch(); });
+  });
+});
+
+// ── AUTH ───────────────────────────────────────────────────────────────────
+async function doSignup() {
+  const email=document.getElementById('signupEmail').value.trim(), password=document.getElementById('signupPass').value;
+  const btn=document.getElementById('signupBtn'), err=document.getElementById('signupErr');
+  err.classList.remove('on');
+  if(!email||!password){showErr(err,'Fill in all fields');return;}
+  btn.disabled=true; btn.textContent='Creating…';
+  try {
+    const res=await api('/api/signup','POST',{email,password});
+    if(res.error){showErr(err,res.error);return;}
+    setSession(res); showDashboard(); showToast('Welcome to LeadGen Pro!','s');
+  } catch{showErr(err,'Network error');}
+  finally{btn.disabled=false;btn.textContent='Create account';}
+}
+
+async function doLogin() {
+  const email=document.getElementById('loginEmail').value.trim(), password=document.getElementById('loginPass').value;
+  const btn=document.getElementById('loginBtn'), err=document.getElementById('loginErr');
+  err.classList.remove('on');
+  btn.disabled=true; btn.textContent='Logging in…';
+  try {
+    const res=await api('/api/login','POST',{email,password});
+    if(res.error){showErr(err,res.error);return;}
+    setSession(res); showDashboard(); showToast('Welcome back!','s');
+  } catch{showErr(err,'Network error');}
+  finally{btn.disabled=false;btn.textContent='Log in';}
+}
+
+function doLogout() { localStorage.removeItem('lg_token'); localStorage.removeItem('lg_user'); G.token=null; G.user=null; showPage('landing'); }
+function setSession(d) { G.token=d.token; G.user={email:d.email,plan:d.plan,planLabel:d.planLabel,limits:d.limits}; localStorage.setItem('lg_token',d.token); localStorage.setItem('lg_user',JSON.stringify(G.user)); }
+async function refreshUser() { const r=await api('/api/me','GET'); if(!r.error){G.user={...G.user,...r};localStorage.setItem('lg_user',JSON.stringify(G.user));updatePlanUI();} }
+function showErr(el,msg){el.textContent=msg;el.classList.add('on');}
+
+// ── DASHBOARD ──────────────────────────────────────────────────────────────
+function showDashboard() {
+  hideAllPages();
+  document.getElementById('page-dashboard').style.display='flex';
+  updatePlanUI();
+}
+
+function updatePlanUI() {
+  const plan=G.user?.plan||'free';
+  document.getElementById('hdrRight').innerHTML=`<span class="plan-pill ${plan}">${G.user?.planLabel||'Free'}</span><span style="font-size:12px;color:var(--muted)">${G.user?.email}</span>`;
+  renderUpgradeView();
+}
+
+function renderUpgradeView() {
+  const plan=G.user?.plan||'free';
+  const plans=[
+    {id:'basic',name:'Basic',price:29,features:['50 exports/month','Bulk search','CRM pipeline','Email outreach']},
+    {id:'pro',name:'Pro',price:79,features:['200 exports/month','Bulk search','CRM pipeline','Email outreach','Priority support']},
+    {id:'agency',name:'Agency',price:199,features:['Unlimited exports','Bulk search','CRM pipeline','Email outreach','White-label CSV']}
+  ];
+  document.getElementById('upgradeContent').innerHTML=`
+    <p style="color:var(--muted);font-size:13px;margin-bottom:1.5rem">Current plan: <strong style="color:var(--text)">${G.user?.planLabel}</strong></p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:700px">
+      ${plans.map(p=>`
+        <div style="background:var(--bg3);border:1px solid ${plan===p.id?'var(--accent)':'var(--border)'};border-radius:12px;padding:1.3rem">
+          <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">${p.name}</div>
+          <div style="font-family:var(--head);font-size:1.8rem;font-weight:800;margin-bottom:.8rem">$${p.price}<span style="font-size:12px;font-weight:400;color:var(--muted)">/mo</span></div>
+          <ul style="list-style:none;margin-bottom:1rem">${p.features.map(f=>`<li style="font-size:12px;color:var(--muted);padding:3px 0;display:flex;align-items:center;gap:6px"><span style="color:var(--green);font-size:10px">✓</span>${f}</li>`).join('')}</ul>
+          ${plan===p.id?`<div style="background:var(--accent-dim);color:var(--accent);border-radius:7px;padding:7px;text-align:center;font-size:12px;font-weight:500">Current plan</div>`:`<button class="btn btn-p" style="width:100%;justify-content:center;font-size:12px" onclick="startCheckout('${p.id}')">Upgrade</button>`}
+        </div>`).join('')}
+    </div>`;
+}
+
+async function startCheckout(plan) {
+  showToast('Redirecting to checkout…','i');
+  const res=await api('/api/create-checkout','POST',{plan});
+  if(res.error){showToast('Error: '+res.error,'e');return;}
+  window.location.href=res.url;
+}
+
+// ── SEARCH ─────────────────────────────────────────────────────────────────
+async function runSearch() {
+  const q=document.getElementById('q').value.trim(), loc=document.getElementById('loc').value.trim();
+  const minR=parseFloat(document.getElementById('minR').value);
+  if(!q||!loc){showToast('Enter a business type and city','i');return;}
+  document.getElementById('es').style.display='none';
+  document.getElementById('tw').style.display='none';
+  document.getElementById('rhdr').style.display='none';
+  document.getElementById('eb').classList.remove('on');
+  const pw=document.getElementById('pw'); pw.classList.add('on');
+  setProg('pfill','ppct','ptxt',20,'Searching Google Maps…');
+  const btn=document.getElementById('searchBtn'); btn.disabled=true;
+  try {
+    const limit=document.getElementById('searchLimit')?.value||'20';
+    const noWebsite=G.filters.noWebsite;
+    const filterParam=noWebsite?'&noWebsite=true':'';
+    const res=await api(`/api/search?q=${encodeURIComponent(q)}&loc=${encodeURIComponent(loc)}&limit=${limit}${filterParam}`,'GET');
+    setProg('pfill','ppct','ptxt',100,'Done!');
+    if(res.error){pw.classList.remove('on');showEb(res.error,'eb');return;}
+    let leads=res.leads||[];
+    if(minR>0) leads=leads.filter(l=>l.rating>=minR);
+    // Filter out archived
+    const arcIds=new Set(G.archived.map(a=>a.id));
+    leads=leads.filter(l=>!arcIds.has(l.id));
+    G.leads=leads; G.sel.clear(); G.exportLimit=res.exportLimit||0;
+    setTimeout(()=>{ pw.classList.remove('on'); if(res.debug||res.errors?.length) showEb((res.debug||res.errors.join(' | ')),'eb'); leads.length?renderLeads():showEmpty('es','No results found','Try a different term or city. Check the red error above.');
+      checkCreditsAfterSearch(); },300);
+  } catch(e){ pw.classList.remove('on'); showEb('Search failed: '+e.message,'eb'); }
+  finally{ btn.disabled=false; }
+}
+
+// ── BULK SEARCH ────────────────────────────────────────────────────────────
+function initBulkRows() {
+  G.bulkRows=[{q:'',loc:''},{q:'',loc:''}];
+  renderBulkRows();
+}
+
+function renderBulkRows() {
+  document.getElementById('bulkRows').innerHTML=G.bulkRows.map((r,i)=>`
+    <div class="bulk-row">
+      <div class="fld"><label>${i===0?'Business Type':''}</label><input type="text" value="${esc(r.q)}" placeholder="dentist, plumber…" oninput="G.bulkRows[${i}].q=this.value" onkeydown="if(event.key==='Enter')runBulkSearch()"></div>
+      <div class="fld"><label>${i===0?'City / Location':''}</label><input type="text" value="${esc(r.loc)}" placeholder="Miami FL…" oninput="G.bulkRows[${i}].loc=this.value" onkeydown="if(event.key==='Enter')runBulkSearch()"></div>
+      <div class="fld"><label>${i===0?'&nbsp;':''}</label><button class="btn btn-d" style="padding:7px 10px;font-size:12px" onclick="removeBulkRow(${i})">✕</button></div>
+    </div>`).join('');
+}
+
+function addBulkRow() { G.bulkRows.push({q:'',loc:''}); renderBulkRows(); }
+function removeBulkRow(i) { if(G.bulkRows.length>1){G.bulkRows.splice(i,1);renderBulkRows();} }
+
+async function runBulkSearch() {
+  const rows=G.bulkRows.filter(r=>r.q.trim()&&r.loc.trim());
+  if(!rows.length){showToast('Add at least one search row','i');return;}
+  document.getElementById('bulkEmpty').style.display='none';
+  document.getElementById('bulkTw').style.display='none';
+  document.getElementById('bulkRhdr').style.display='none';
+  document.getElementById('bulkEb').classList.remove('on');
+  const pw=document.getElementById('bulkPw'); pw.classList.add('on');
+  const btn=document.getElementById('bulkBtn'); btn.disabled=true;
+  G.bulkLeads=[];
+  const arcIds=new Set(G.archived.map(a=>a.id));
+  for(let i=0;i<rows.length;i++){
+    const r=rows[i];
+    const pct=Math.round(((i)/rows.length)*90)+5;
+    setProg('bulkPfill','bulkPpct','bulkPtxt',pct,`Searching ${r.q} in ${r.loc}… (${i+1}/${rows.length})`);
+    try {
+      const res=await api(`/api/search?q=${encodeURIComponent(r.q)}&loc=${encodeURIComponent(r.loc)}&limit=20`,'GET');
+      const leads=(res.leads||[]).filter(l=>!arcIds.has(l.id)).map(l=>({...l,_search:`${r.q} / ${r.loc}`}));
+      G.bulkLeads.push(...leads);
+    } catch(e){ console.warn('Bulk row failed:',e.message); }
+  }
+  // Dedupe
+  const seen=new Set();
+  G.bulkLeads=G.bulkLeads.filter(l=>{ const k=(l.name+l.city).toLowerCase().replace(/\s/g,''); if(seen.has(k))return false; seen.add(k);return true; });
+  setProg('bulkPfill','bulkPpct','bulkPtxt',100,'Done!');
+  setTimeout(()=>{
+    pw.classList.remove('on');
+    if(G.bulkLeads.length) renderBulkLeads();
+    else showEmpty('bulkEmpty','No results','Try different search terms or cities.');
+    btn.disabled=false;
+  },300);
+}
+
+function renderBulkLeads() {
+  document.getElementById('bulkLb').innerHTML=G.bulkLeads.map(l=>`
+    <tr onclick="openD('${esc(l.id)}','bulk')">
+      <td></td>
+      <td class="nm">${esc(l.name)}</td><td class="mu">${esc(l.cat)}</td>
+      <td class="mu">${esc(l.phone)||'—'}</td>
+      <td class="lk">${l.website?`<a href="${esc(l.website)}" target="_blank" onclick="event.stopPropagation()">${esc(l.website.replace(/^https?:\/\//,'').slice(0,22))}</a>`:'—'}</td>
+      <td class="mu" title="${esc(l.address)}">${esc(l.address.slice(0,26))}</td>
+      <td class="mu">${l.rating?l.rating+'★':'—'}</td>
+      <td><span class="pill ${psc(l.score)}">${l.score}</span></td>
+      <td class="mu" style="font-size:11px">${esc(l._search||'')}</td>
+      <td style="display:flex;gap:4px">
+        <button class="btn btn-g" style="padding:3px 8px;font-size:10px" onclick="event.stopPropagation();quickSave('${esc(l.id)}','bulk')">Save</button>
+        <button class="btn btn-y" style="padding:3px 8px;font-size:10px" onclick="event.stopPropagation();archiveLead('${esc(l.id)}','bulk')">Archive</button>
+      </td>
+    </tr>`).join('');
+  document.getElementById('bulkTw').style.display='block';
+  document.getElementById('bulkRhdr').style.display='flex';
+  document.getElementById('bulkRc').textContent=`${G.bulkLeads.length} businesses found`;
+}
+
+function saveBulkAll() {
+  let n=0;
+  G.bulkLeads.forEach(l=>{ if(!G.saved.find(x=>x.id===l.id)){G.saved.push(l);n++;} });
+  persistSaved(); updateBadges(); showToast(`${n} leads saved`,'s'); renderSaved();
+}
+
+function exportBulk() { G.exportPool=G.bulkLeads; G.exportLimit=G.user?.limits?.exports||0; openExportModal(); }
+
+// ── RENDER LEADS ───────────────────────────────────────────────────────────
+function toggleFilter(name){
+  G.filters[name]=!G.filters[name];
+  const on=G.filters[name];
+  const track=document.getElementById(name==='noWebsite'?'noWebTrack':'noPhoneTrack');
+  const thumb=document.getElementById(name==='noWebsite'?'noWebThumb':'noPhoneThumb');
+  if(track){track.style.background=on?'var(--accent)':'var(--bg4)';}
+  if(thumb){thumb.style.transform=on?'translateX(16px)':'translateX(0)';thumb.style.background=on?'#fff':'var(--muted)';}
+  if(G.leads.length) renderLeads();
+}
+function applyFilters(leads){
+  let out=leads;
+  // noWebsite filtering handled server-side when toggle is ON before search
+  // noPhone filter removed
+  return out;
+}
+function psc(s){return s>=70?'ph':s>=40?'pm':'pl';}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function renderLeads() {
+  const _filtered=applyFilters(G.leads);
+  const filterOn = G.filters.noWebsite;
+  const rcText = filterOn
+    ? `${G.leads.length} businesses without websites found`
+    : `${_filtered.length} of ${G.leads.length} businesses found${_filtered.length < G.leads.length ? ' ('+G.leads.length+' total, filtering active)' : ''}`;
+  document.getElementById('rc').textContent = rcText;
+  document.getElementById('lb').innerHTML=_filtered.map(l=>`
+    <tr class="${G.sel.has(l.id)?'sel':''} ${!l.website?'high-opp':''}" onclick="openD('${esc(l.id)}','main')">
+      <td onclick="event.stopPropagation()"><input type="checkbox" ${G.sel.has(l.id)?'checked':''} style="accent-color:var(--accent);cursor:pointer" onchange="toggleSel('${esc(l.id)}',this)"></td>
+      <td class="nm">${esc(l.name)}${!l.website?' <span class=\"ho-badge\">High Opportunity</span>':''}</td>
+      <td class="mu">${esc(l.cat)}</td>
+      <td class="mu">${esc(l.phone)||'—'}</td>
+      <td class="${l.website?'lk':'mu'}">${l.website?`<a href="${esc(l.website)}" target="_blank" onclick="event.stopPropagation()">${esc(l.website.replace(/^https?:\/\//,'').slice(0,22))}</a>`:'<span style="color:var(--muted);font-size:11px">No website</span>'}</td>
+      <td class="mu" title="${esc(l.address)}">${esc(l.address.slice(0,26))}${l.address.length>26?'…':''}</td>
+      <td class="mu">${l.rating?l.rating+'★':'—'}</td>
+      <td><span class="pill ${psc(l.score)}">${l.score}</span></td>
+      <td style="display:flex;gap:4px;flex-wrap:wrap">
+        <button class="btn btn-g" style="padding:3px 8px;font-size:10px" onclick="event.stopPropagation();quickSave('${esc(l.id)}','main')">Save</button>
+        <button class="btn btn-p" style="padding:3px 8px;font-size:10px" onclick="event.stopPropagation();openOutreachModal('${esc(l.id)}','main')">✉ Outreach</button>
+        <button class="btn btn-y" style="padding:3px 8px;font-size:10px" onclick="event.stopPropagation();archiveLead('${esc(l.id)}','main')">Archive</button>
+      </td>
+    </tr>`).join('');
+  document.getElementById('tw').style.display='block';
+  document.getElementById('rhdr').style.display='flex';
+  // rc already set above with filter count
+}
+
+// ── SELECT ─────────────────────────────────────────────────────────────────
+function toggleSel(id,cb){if(cb.checked)G.sel.add(id);else G.sel.delete(id);renderLeads();}
+function toggleAll(cb){if(cb.checked)G.leads.forEach(l=>G.sel.add(l.id));else G.sel.clear();renderLeads();}
+function selAll(){if(G.sel.size===G.leads.length)G.sel.clear();else G.leads.forEach(l=>G.sel.add(l.id));renderLeads();}
+
+// ── SAVE ───────────────────────────────────────────────────────────────────
+function quickSave(id, pool='main') {
+  const src=pool==='bulk'?G.bulkLeads:G.leads;
+  const l=src.find(x=>x.id===id);
+  if(l&&!G.saved.find(x=>x.id===id)){
+    G.saved.push({...l,crmStatus:'new',notes:''});
+    persistSaved(); updateBadges(); showToast('Saved!','s'); renderSaved();
+  }
+}
+function saveSelected(){let n=0;G.sel.forEach(id=>{const l=G.leads.find(x=>x.id===id);if(l&&!G.saved.find(x=>x.id===id)){G.saved.push({...l,crmStatus:'new',notes:''});n++;}});persistSaved();updateBadges();showToast(`${n} saved`,'s');renderSaved();}
+function saveCurrent(){if(!G.cur)return;G.cur.notes=document.getElementById('drN').value;if(!G.saved.find(x=>x.id===G.cur.id)){G.saved.push(G.cur);updateBadges();}persistSaved();showToast('Saved!','s');renderSaved();renderCrm();}
+function persistSaved(){localStorage.setItem('lg_saved',JSON.stringify(G.saved));}
+
+// ── ARCHIVE ────────────────────────────────────────────────────────────────
+function archiveLead(id, pool='main') {
+  const src=pool==='bulk'?G.bulkLeads:G.leads;
+  const l=src.find(x=>x.id===id);
+  if(l&&!G.archived.find(x=>x.id===id)){
+    G.archived.push(l);
+    localStorage.setItem('lg_archived',JSON.stringify(G.archived));
+  }
+  if(pool==='main'){G.leads=G.leads.filter(x=>x.id!==id);renderLeads();}
+  else{G.bulkLeads=G.bulkLeads.filter(x=>x.id!==id);renderBulkLeads();}
+  updateBadges(); showToast('Archived','i'); renderArchive();
+}
+function archiveSelected(){G.sel.forEach(id=>archiveLead(id,'main'));G.sel.clear();}
+function archiveCurrent(){if(!G.cur)return;archiveLead(G.cur.id,'main');closeDrawer();}
+function clearArchive(){G.archived=[];localStorage.setItem('lg_archived','[]');updateBadges();renderArchive();showToast('Archive cleared','i');}
+function renderArchive(){
+  const w=document.getElementById('archiveTw'),e=document.getElementById('archiveEmpty');
+  document.getElementById('archiveCount').textContent=G.archived.length+' leads';
+  document.getElementById('archiveBadge').textContent=G.archived.length;
+  if(!G.archived.length){w.style.display='none';e.style.display='flex';return;}
+  e.style.display='none';w.style.display='block';
+  document.getElementById('archiveBody').innerHTML=G.archived.map(l=>`
+    <tr><td></td><td class="nm">${esc(l.name)}</td><td class="mu">${esc(l.cat)}</td>
+    <td class="mu">${esc(l.phone)||'—'}</td><td class="mu">${esc(l.address.slice(0,26))}</td>
+    <td class="mu">${l.rating?l.rating+'★':'—'}</td>
+    <td><button class="btn btn-o" style="padding:3px 9px;font-size:10px" onclick="unarchive('${esc(l.id)}')">Restore</button></td></tr>`).join('');
+}
+function unarchive(id){const l=G.archived.find(x=>x.id===id);if(!l)return;G.archived=G.archived.filter(x=>x.id!==id);localStorage.setItem('lg_archived',JSON.stringify(G.archived));updateBadges();renderArchive();showToast('Restored','s');}
+
+// ── SAVED VIEW ─────────────────────────────────────────────────────────────
+function renderSaved(){
+  const w=document.getElementById('st'),e=document.getElementById('se2');
+  document.getElementById('sc3').textContent=G.saved.length+' leads';
+  if(!G.saved.length){w.style.display='none';e.style.display='flex';return;}
+  e.style.display='none';w.style.display='block';
+  const crmColors={new:'crm-new',contacted:'crm-contacted',interested:'crm-interested',closed:'crm-closed',lost:'crm-lost'};
+  const crmLabels={new:'New',contacted:'Contacted',interested:'Interested',closed:'Won',lost:'Lost'};
+  document.getElementById('sb').innerHTML=G.saved.map(l=>`
+    <tr onclick="openD('${esc(l.id)}','saved')"><td></td>
+    <td class="nm">${esc(l.name)}</td><td class="mu">${esc(l.cat)}</td>
+    <td class="mu">${esc(l.phone)||'—'}</td>
+    <td class="lk">${l.website?`<a href="${esc(l.website)}" target="_blank" onclick="event.stopPropagation()">${esc(l.website.replace(/^https?:\/\//,'').slice(0,22))}</a>`:'—'}</td>
+    <td class="mu">${esc(l.address.slice(0,24))}</td>
+    <td class="mu">${l.rating?l.rating+'★':'—'}</td>
+    <td><span class="pill ${psc(l.score)}">${l.score}</span></td>
+    <td><span class="crm-pill ${crmColors[l.crmStatus||'new']}">${crmLabels[l.crmStatus||'new']}</span></td>
+    <td><button class="btn btn-d" style="padding:3px 8px;font-size:10px" onclick="event.stopPropagation();remSaved('${esc(l.id)}')">Remove</button></td></tr>`).join('');
+}
+function remSaved(id){G.saved=G.saved.filter(l=>l.id!==id);persistSaved();updateBadges();renderSaved();renderCrm();}
+
+// ── CRM ────────────────────────────────────────────────────────────────────
+const CRM_STAGES=[
+  {id:'new',label:'New',color:'var(--muted)'},
+  {id:'contacted',label:'Contacted',color:'var(--accent)'},
+  {id:'interested',label:'Interested',color:'var(--yellow)'},
+  {id:'closed',label:'Won 🎉',color:'var(--green)'},
+  {id:'lost',label:'Lost',color:'var(--red)'}
+];
+
+function renderCrm(){
+  const kanban=document.getElementById('kanban');
+  kanban.innerHTML=CRM_STAGES.map(stage=>{
+    const leads=G.saved.filter(l=>(l.crmStatus||'new')===stage.id);
+    return `
+      <div class="kol">
+        <div class="kol-hdr" style="color:${stage.color}">${stage.label}<span class="kcount">${leads.length}</span></div>
+        ${leads.map(l=>`
+          <div class="kcard" onclick="openD('${esc(l.id)}','saved')">
+            <div class="kcard-name">${esc(l.name)}</div>
+            <div class="kcard-meta">${esc(l.cat)} · ${esc(l.city)}</div>
+            <div class="kcard-meta">${esc(l.phone)||'No phone'}</div>
+            <div class="kcard-actions">
+              ${CRM_STAGES.filter(s=>s.id!==stage.id).map(s=>`
+                <button class="btn btn-o" style="padding:2px 6px;font-size:10px;margin-bottom:2px" onclick="event.stopPropagation();moveCrm('${esc(l.id)}','${s.id}')">${s.label}</button>`).join('')}
+            </div>
+          </div>`).join('')}
+      </div>`;
+  }).join('');
+}
+
+function moveCrm(id,status){
+  const l=G.saved.find(x=>x.id===id);
+  if(l){l.crmStatus=status;persistSaved();renderCrm();renderSaved();}
+}
+
+function updateCrmStatus(){
+  if(!G.cur)return;
+  const status=document.getElementById('drCrmStatus').value;
+  const saved=G.saved.find(x=>x.id===G.cur.id);
+  if(saved){saved.crmStatus=status;G.cur.crmStatus=status;persistSaved();renderCrm();renderSaved();}
+}
+
+// ── DRAWER ─────────────────────────────────────────────────────────────────
+function openD(id, pool='main'){
+  const src=pool==='main'?G.leads:pool==='bulk'?G.bulkLeads:G.saved;
+  let l=src.find(x=>x.id===id);
+  if(!l) l=G.saved.find(x=>x.id===id)||G.leads.find(x=>x.id===id)||G.bulkLeads.find(x=>x.id===id);
+  if(!l)return; G.cur=l;
+  document.getElementById('drT').textContent=l.name;
+  document.getElementById('drS').textContent=`${l.cat} · ${l.city}`;
+  const statusEl=document.getElementById('drCrmStatus');
+  statusEl.value=l.crmStatus||'new';
+  document.getElementById('drC').innerHTML=dr([['Phone',l.phone||'—',null],['Website',l.website?l.website.replace(/^https?:\/\//,''):'—',l.website],['Address',l.address||'—',null]]);
+  document.getElementById('drD').innerHTML=dr([['Rating',l.rating?`${l.rating}★ (${(l.reviews||0).toLocaleString()} reviews)`:'—',null],['Score',`${l.score}/100`,null],['Hours',l.hours||'—',null]]);
+  document.getElementById('drN').value=l.notes||'';
+  document.getElementById('drawer').classList.add('on');
+  document.getElementById('ov').classList.add('on');
+}
+function dr(rows){return rows.map(([k,v,lnk])=>`<div class="drow"><span class="dk">${k}</span><span class="dv ${lnk?'lk':''}">${lnk?`<a href="${esc(lnk)}" target="_blank">${esc(v)}</a>`:esc(v)}</span></div>`).join('');}
+function closeDrawer(){document.getElementById('drawer').classList.remove('on');document.getElementById('ov').classList.remove('on');}
+
+// ── EMAIL OUTREACH ─────────────────────────────────────────────────────────
+function emailLead(){
+  if(!G.cur)return;
+  closeDrawer();
+  showView('outreach',document.getElementById('nav-outreach'));
+  // Find email if available
+  const email=G.cur.email||'';
+  document.getElementById('outTo').value=email;
+  document.getElementById('outSubject').value=`Quick question about ${G.cur.name}`;
+  document.getElementById('outBody').value=`Hi,\n\nI came across ${G.cur.name} and wanted to reach out.\n\n`;
+}
+
+function sendEmail(){
+  const to=document.getElementById('outTo').value.trim();
+  const subject=document.getElementById('outSubject').value.trim();
+  const body=document.getElementById('outBody').value.trim();
+  if(!to){showToast('Enter an email address','i');return;}
+  const mailto=`mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.open(mailto,'_blank');
+  showToast('Email client opened','s');
+}
+
+function clearComposer(){document.getElementById('outTo').value='';document.getElementById('outSubject').value='';document.getElementById('outBody').value='';}
+
+function useTemplate(el){
+  document.getElementById('outBody').value=el.textContent.trim();
+  showToast('Template loaded — edit before sending','i');
+}
+
+// ── EXPORT ─────────────────────────────────────────────────────────────────
+function openExport(){G.exportPool=G.sel.size>0?G.leads.filter(l=>G.sel.has(l.id)):G.leads;G.exportLimit=G.user?.limits?.exports||0;openExportModal();}
+function exportSaved(){G.exportPool=G.saved;G.exportLimit=G.user?.limits?.exports||0;openExportModal();}
+
+function openExportModal(){
+  const plan=G.user?.plan||'free';
+  const limit=G.exportLimit;
+  const pool=G.exportPool;
+  if(plan==='free'){
+    document.getElementById('exportMs').textContent='Upgrade to export leads.';
+    document.getElementById('exportBody').innerHTML=`<div style="background:var(--accent-dim);border:1px solid rgba(79,142,247,0.2);border-radius:10px;padding:1.2rem;text-align:center"><div style="font-family:var(--head);font-size:1rem;font-weight:700;margin-bottom:.4rem">Free plan — export locked</div><div style="font-size:12.5px;color:var(--muted);margin-bottom:1rem">Upgrade to Basic ($29/mo) to export leads.</div><button class="btn btn-p" onclick="closeMo();showView('upgrade',document.getElementById('nav-upgrade'))">View plans →</button></div>`;
+    document.getElementById('exportBtn').style.display='none';
+  } else {
+    document.getElementById('exportMs').textContent=`Exporting ${Math.min(pool.length,limit)} of ${pool.length} leads.`;
+    document.getElementById('exportBody').innerHTML='';
+    document.getElementById('exportBtn').style.display='inline-flex';
+  }
+  document.getElementById('mo').classList.add('on');
+}
+
+function closeMo(){document.getElementById('mo').classList.remove('on');}
+
+function doExport(){
+  const pool=G.exportPool, limit=G.exportLimit;
+  const rows=[['Name','Category','Phone','Website','Address','City','State','Zip','Rating','Reviews','Score','CRM Status','Notes']];
+  pool.slice(0,limit).forEach(l=>rows.push([l.name,l.cat,l.phone,l.website,l.address,l.city,l.state,l.zip,l.rating,l.reviews,l.score,l.crmStatus||'',l.notes||'']));
+  const csv=rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`leads_${Date.now()}.csv`; a.click();
+  closeMo(); showToast(`Exported ${Math.min(pool.length,limit)} leads`,'s');
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+function setProg(fillId,pctId,txtId,p,t){
+  document.getElementById(fillId).style.width=p+'%';
+  document.getElementById(pctId).textContent=p+'%';
+  document.getElementById(txtId).textContent=t;
+  const sp=document.getElementById('searchSpinner');
+  if(sp) sp.style.display=(p>0&&p<100)?'flex':'none';
+}
+function showEb(m,id){const b=document.getElementById(id);b.textContent='⚠ '+m;b.classList.add('on');}
+function showEmpty(id,t,s){const e=document.getElementById(id);e.style.display='flex';e.querySelector('.et').textContent=t;e.querySelector('.es').textContent=s;}
+function updateBadges(){document.getElementById('savedBadge').textContent=G.saved.length;document.getElementById('archiveBadge').textContent=G.archived.length;}
+
+// ── VIEWS / PAGES ──────────────────────────────────────────────────────────
+function hideAllPages(){
+  ['landing','pricing','login','signup'].forEach(p=>{const el=document.getElementById('page-'+p);if(el)el.style.display='none';});
+  document.getElementById('page-dashboard').style.display='none';
+}
+function showPage(name){
+  hideAllPages();
+  const el=document.getElementById('page-'+name);
+  if(!el)return;
+  el.style.display=['login','signup','pricing'].includes(name)?'flex':'block';
+  const hdrRight=document.getElementById('hdrRight');
+  if(['landing','pricing'].includes(name)) hdrRight.innerHTML=`<button class="btn btn-o" onclick="showPage('login')">Log in</button><button class="btn btn-p" onclick="showPage('signup')">Get started</button>`;
+  else if(['login','signup'].includes(name)) hdrRight.innerHTML=`<button class="btn btn-o" onclick="showPage('${name==='login'?'signup':'login'}')">${name==='login'?'Sign up':'Log in'}</button>`;
+}
+function showView(name,el){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.getElementById('view-'+name).classList.add('on');
+  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));
+  if(el)el.classList.add('on');
+  if(name==='crm')renderCrm();
+  if(name==='saved')renderSaved();
+  if(name==='account')loadUsage();
+  if(name==='community')initChat();
+  if(name==='archive')renderArchive();
+}
+
+// ── API ────────────────────────────────────────────────────────────────────
+async function api(url,method='GET',body=null){
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(G.token) opts.headers['Authorization']='Bearer '+G.token;
+  if(body) opts.body=JSON.stringify(body);
+  const res=await fetch(url,opts);
+  return res.json();
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────────
+// ── OUTREACH MESSAGE GENERATOR ────────────────────────────────────────────
+let outreachLead = null;
+
+function openOutreachModal(id, pool='main') {
+  const src = pool==='bulk'?G.bulkLeads:pool==='saved'?G.saved:G.leads;
+  const l = src.find(x=>x.id===id) || G.leads.find(x=>x.id===id) || G.saved.find(x=>x.id===id);
+  if(!l) return;
+  outreachLead = l;
+  document.getElementById('outreachMo').classList.add('on');
+  document.getElementById('outreachBizName').textContent = l.name + ' · ' + l.city;
+  document.getElementById('outreachLoading').style.display = 'block';
+  document.getElementById('outreachResult').style.display = 'none';
+  generateOutreachMessage(l);
+}
+
+function generateOutreachMessage(l) {
+  const hasWebsite = !!(l.website && l.website.trim());
+  const noWebsiteAngle = !hasWebsite;
+  const messages = noWebsiteAngle ? [
+    `Hey ${l.name} team,\n\nI was searching for ${l.cat.toLowerCase()} services in ${l.city} and noticed you don't have a website yet — which honestly surprised me given how strong your reputation looks.\n\nI build fast, affordable websites for local businesses like yours that turn searchers into paying customers. Most of my clients see new inquiries within the first 30 days.\n\nWorth a quick 10-min call this week?`,
+    `Hi there,\n\nI came across ${l.name} while researching ${l.cat.toLowerCase()} businesses in ${l.city}. You've clearly built something people love — but without a website, you're leaving a lot of customers on the table who search online first.\n\nI specialize in getting local businesses like yours found on Google and converting that traffic into real revenue.\n\nWould you be open to a free 15-minute strategy call?`,
+    `Hello ${l.name},\n\nQuick note — I help ${l.cat.toLowerCase()} businesses in ${l.city} get more customers through professional websites and local SEO.\n\nI noticed you're not currently online, which means you're likely missing out on the 70%+ of people who search before they buy.\n\nI'd love to show you what's possible. Any chance you have 10 minutes this week?`
+  ] : [
+    `Hi ${l.name} team,\n\nI came across your business in ${l.city} and wanted to reach out. I work with ${l.cat.toLowerCase()} businesses to help them generate more leads and scale their online presence.\n\nI have a few ideas specific to your market that I think could make a real difference.\n\nWould you be open to a quick call this week?`,
+    `Hello,\n\nI specialize in helping ${l.cat.toLowerCase()} businesses in ${l.city} grow their client base through targeted digital marketing.\n\nI've helped similar businesses in your area increase their monthly inquiries significantly — and I think there's a real opportunity here for ${l.name}.\n\nDo you have 15 minutes for a quick intro call?`
+  ];
+  const msg = messages[Math.floor(Math.random() * messages.length)];
+  setTimeout(() => {
+    document.getElementById('outreachLoading').style.display = 'none';
+    document.getElementById('outreachText').textContent = msg;
+    document.getElementById('outreachResult').style.display = 'block';
+  }, 900);
+}
+
+function regenerateOutreach() {
+  if(!outreachLead) return;
+  document.getElementById('outreachLoading').style.display = 'block';
+  document.getElementById('outreachResult').style.display = 'none';
+  generateOutreachMessage(outreachLead);
+}
+
+function copyOutreach() {
+  const txt = document.getElementById('outreachText').textContent;
+  navigator.clipboard.writeText(txt).then(() => showToast('Message copied!','s'));
+}
+
+function useInComposer() {
+  const txt = document.getElementById('outreachText').textContent;
+  const email = outreachLead?.email || '';
+  closeOutreachMo();
+  showView('outreach', document.getElementById('nav-outreach'));
+  document.getElementById('outTo').value = email;
+  document.getElementById('outSubject').value = outreachLead ? `Quick note for ${outreachLead.name}` : '';
+  document.getElementById('outBody').value = txt;
+  showToast('Message loaded in composer','s');
+}
+
+function closeOutreachMo() {
+  document.getElementById('outreachMo').classList.remove('on');
+}
+
+// ── COMMUNITY CHAT ────────────────────────────────────────────────────────
+let chatWs = null;
+let chatConnected = false;
+let chatInited = false;
+
+function initChat() {
+  if (chatInited) return;
+  chatInited = true;
+  connectChat();
+}
+
+function connectChat() {
+  const token = G.token || '';
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const url = `${proto}//${location.host}?token=${encodeURIComponent(token)}`;
+
+  chatWs = new WebSocket(url);
+
+  chatWs.onopen = () => {
+    chatConnected = true;
+    document.getElementById('chatOffline').style.display = 'none';
+  };
+
+  chatWs.onmessage = (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.type === 'history') {
+        document.getElementById('chatMsgs').innerHTML = '';
+        document.getElementById('chatOffline').style.display = 'none';
+        resetChatState();
+        data.messages.forEach(m => appendMsg(m));
+        scrollChat();
+      } else if (data.type === 'message') {
+        appendMsg(data);
+        scrollChat();
+      } else if (data.type === 'system') {
+        appendSystem(data.text);
+        scrollChat();
+      } else if (data.type === 'users') {
+        const count = data.count || 0;
+        document.getElementById('onlineCount').textContent = count + ' online';
+        document.getElementById('onlineBadge').textContent = count;
+      }
+    } catch(e) {}
+  };
+
+  chatWs.onclose = () => {
+    chatConnected = false;
+    // Reconnect after 3s
+    setTimeout(() => { if (chatInited) connectChat(); }, 3000);
+  };
+
+  chatWs.onerror = () => { chatWs.close(); };
+}
+
+let lastMsgSender = null;
+let lastMsgTime = 0;
+let lastMsgDate = '';
+
+function appendMsg(msg) {
+  const myEmail = G.user?.email || '';
+  const isOwn = msg.email === myEmail;
+  const initials = (msg.displayName || '?').slice(0,2).toUpperCase();
+  const msgDate = new Date(msg.ts).toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'});
+  const time = new Date(msg.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const msgsEl = document.getElementById('chatMsgs');
+  const timeDiff = msg.ts - lastMsgTime;
+  const sameUser = lastMsgSender === msg.email && timeDiff < 5*60*1000;
+
+  // Date divider
+  if (msgDate !== lastMsgDate) {
+    const datDiv = document.createElement('div');
+    datDiv.className = 'chat-date-divider';
+    datDiv.innerHTML = `<span>${msgDate}</span>`;
+    msgsEl.appendChild(datDiv);
+    lastMsgDate = msgDate;
+    lastMsgSender = null; // force new header after date break
+  }
+
+  const div = document.createElement('div');
+  if (!sameUser) {
+    // Full message with avatar and name
+    div.className = 'chat-msg';
+    div.innerHTML = `
+      <div class="chat-avatar ${isOwn?'own':''}">${initials}</div>
+      <div class="chat-bubble">
+        <div class="chat-name">
+          <span class="${isOwn?'chat-name-own':''}">${esc(msg.displayName)}</span>
+          ${isOwn?'<span class="you-tag">you</span>':''}
+          <span class="chat-time">${time}</span>
+        </div>
+        <div class="chat-text">${esc(msg.text).replace(/\n/g,'<br>')}</div>
+      </div>`;
+  } else {
+    // Compact continuation — no avatar/name repeat
+    div.className = 'chat-msg-cont';
+    div.innerHTML = `
+      <div class="chat-cont-time">${time}</div>
+      <div class="chat-text">${esc(msg.text).replace(/\n/g,'<br>')}</div>`;
+  }
+  msgsEl.appendChild(div);
+  lastMsgSender = msg.email;
+  lastMsgTime = msg.ts;
+}
+
+function resetChatState() {
+  lastMsgSender = null;
+  lastMsgTime = 0;
+  lastMsgDate = '';
+}
+
+function appendSystem(text) {
+  const msgsEl = document.getElementById('chatMsgs');
+  const div = document.createElement('div');
+  div.className = 'chat-system';
+  div.textContent = text;
+  msgsEl.appendChild(div);
+}
+
+function scrollChat() {
+  const el = document.getElementById('chatMsgs');
+  el.scrollTop = el.scrollHeight;
+}
+
+function sendChatMsg() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!chatConnected || !chatWs || chatWs.readyState !== WebSocket.OPEN) {
+    showToast('Not connected to chat — reconnecting…','e');
+    connectChat();
+    return;
+  }
+  chatWs.send(JSON.stringify({ type: 'message', text }));
+  input.value = '';
+  input.style.height = 'auto';
+}
+
+function insertTopic(topic) {
+  const input = document.getElementById('chatInput');
+  input.value = topic + ': ';
+  input.focus();
+}
+
+// ── ACCOUNT SETTINGS ──────────────────────────────────────────────────────
+async function loadUsage() {
+  try {
+    const res = await api('/api/usage','GET');
+    if (res.error) return;
+    const pct = res.limit >= 999999 ? 0 : Math.round((res.used/res.limit)*100);
+    document.getElementById('usageUsed').textContent = res.used;
+    document.getElementById('usageRemaining').textContent = res.limit >= 999999 ? '∞' : res.remaining;
+    document.getElementById('usageLimit').textContent = res.limit >= 999999 ? '∞' : res.limit;
+    document.getElementById('usageBar').style.width = Math.min(pct,100)+'%';
+    document.getElementById('usageBar').style.background = pct > 80 ? 'linear-gradient(90deg,var(--yellow),var(--red))' : 'linear-gradient(90deg,var(--accent),var(--accent2))';
+    document.getElementById('usageLabel').textContent = res.limit >= 999999 ? 'Unlimited plan — no daily cap' : `${pct}% of daily limit used — resets at midnight`;
+    document.getElementById('currentEmailDisplay').textContent = G.user?.email || '—';
+
+    // Low credits warning — show when ≤500 remaining and not unlimited
+    if (res.limit < 999999 && res.remaining <= 500 && res.remaining > 0) {
+      const warn = document.getElementById('lowCreditsWarn');
+      document.getElementById('lowCreditsMsg').textContent = `Only ${res.remaining} searches left today. Resets at midnight.`;
+      warn.style.display = 'flex';
+    }
+  } catch(e) { console.warn('Usage load failed:', e); }
+}
+
+async function saveProfile() {
+  const newEmail = document.getElementById('newEmail').value.trim();
+  const newPassword = document.getElementById('newPassword').value;
+  const currentPassword = document.getElementById('currentPassword').value;
+  const errEl = document.getElementById('profileErr');
+  const okEl = document.getElementById('profileOk');
+  const btn = document.getElementById('saveProfileBtn');
+
+  errEl.style.display='none'; okEl.style.display='none';
+
+  if (!currentPassword) { errEl.textContent='Enter your current password to save changes'; errEl.style.display='block'; return; }
+  if (!newEmail && !newPassword) { errEl.textContent='Enter a new email or new password to update'; errEl.style.display='block'; return; }
+
+  btn.disabled=true; btn.textContent='Saving…';
+  try {
+    const res = await api('/api/update-profile','POST',{ newEmail:newEmail||undefined, newPassword:newPassword||undefined, currentPassword });
+    if (res.error) { errEl.textContent=res.error; errEl.style.display='block'; return; }
+    // Update session with new token
+    G.token=res.token;
+    G.user={...G.user, email:res.email, plan:res.plan, planLabel:res.planLabel};
+    localStorage.setItem('lg_token',res.token);
+    localStorage.setItem('lg_user',JSON.stringify(G.user));
+    updatePlanUI();
+    okEl.textContent='✓ Profile updated successfully!'; okEl.style.display='block';
+    document.getElementById('currentEmailDisplay').textContent=res.email;
+    document.getElementById('newEmail').value='';
+    document.getElementById('newPassword').value='';
+    document.getElementById('currentPassword').value='';
+    showToast('Profile updated','s');
+  } catch(e) { errEl.textContent='Network error — try again'; errEl.style.display='block'; }
+  finally { btn.disabled=false; btn.textContent='Save Changes'; }
+}
+
+// ── LOW CREDITS CHECK — runs after every search ────────────────────────────
+async function checkCreditsAfterSearch() {
+  try {
+    const res = await api('/api/usage','GET');
+    if (res.error || res.limit >= 999999) return;
+    if (res.remaining <= 500) {
+      const warn = document.getElementById('lowCreditsWarn');
+      document.getElementById('lowCreditsMsg').textContent = `Only ${res.remaining} searches left today. Resets at midnight.`;
+      warn.style.display = 'flex';
+    }
+  } catch(e) {}
+}
+
+let tt;
+function showToast(msg,type='s'){document.getElementById('tmsg').textContent=msg;document.getElementById('tdot').className='tdot '+type;const t=document.getElementById('toast');t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2800);}
+
+// Enter key on login/signup
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;
+  const active=document.querySelector('[id^="page-"][style*="flex"]');
+  if(!active)return;
+  if(active.id==='page-login')doLogin();
+  if(active.id==='page-signup')doSignup();
+});
