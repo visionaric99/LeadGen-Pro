@@ -1,4 +1,3 @@
-
 const express = require('express');
 const https = require('https');
 const bcrypt = require('bcryptjs');
@@ -154,6 +153,47 @@ app.get('/api/me', auth, (req, res) => {
   const user = users.get(req.user.email);
   if (!user) return res.status(404).json({ error: 'User not found' });
   res.json({ email: user.email, plan: user.plan, planLabel: PLANS[user.plan]?.label, limits: PLANS[user.plan] });
+});
+
+// ── UPDATE PROFILE ────────────────────────────────────────────────────────
+app.post('/api/update-profile', auth, async (req, res) => {
+  const { newEmail, newPassword, currentPassword } = req.body;
+  const user = users.get(req.user.email);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  // Verify current password
+  const valid = await bcrypt.compare(currentPassword, user.password);
+  if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
+
+  // Update email
+  if (newEmail && newEmail !== user.email) {
+    if (users.has(newEmail.toLowerCase())) return res.status(400).json({ error: 'That email is already taken' });
+    users.delete(user.email);
+    user.email = newEmail.toLowerCase();
+    users.set(user.email, user);
+  }
+
+  // Update password
+  if (newPassword) {
+    if (newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    user.password = await bcrypt.hash(newPassword, 10);
+  }
+
+  const token = require('jsonwebtoken').sign({ email: user.email, plan: user.plan }, JWT_SECRET, { expiresIn: '30d' });
+  res.json({ success: true, token, email: user.email, plan: user.plan, planLabel: PLANS[user.plan]?.label });
+});
+
+// ── USAGE STATS ────────────────────────────────────────────────────────────
+app.get('/api/usage', auth, (req, res) => {
+  const user = users.get(req.user.email);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const today = new Date().toISOString().slice(0, 10);
+  const key = user.email + ':' + today;
+  const used = dailyCounts.get(key) || 0;
+  const plan = PLANS[user.plan] || PLANS.free;
+  const limit = plan.dailySearches;
+  const remaining = limit >= 999999 ? 999999 : Math.max(0, limit - used);
+  res.json({ used, limit, remaining, plan: user.plan, planLabel: plan.label });
 });
 
 // ── STRIPE ─────────────────────────────────────────────────────────────────
