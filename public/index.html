@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -362,7 +361,7 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
           </div>
         >
 <!-- PAYWALL PAGE -->
-<div id="page-paywall" style="display:none;flex:1;align-items:center;justify-content:center;flex-direction:column;padding:2rem;text-align:center">
+<div id="page-paywall" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center">
   <div style="font-family:var(--head);font-size:1.4rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.5rem">Choose your plan</div>
   <div style="color:var(--muted);font-size:13px;margin-bottom:2rem;max-width:420px;line-height:1.7">Your account is ready. Subscribe to start generating leads — cancel anytime.</div>
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:720px;width:100%;margin-bottom:1.5rem" id="paywallPlans">
@@ -911,11 +910,18 @@ function hideAllPages(){
 function showPage(name){
   hideAllPages();
   const el=document.getElementById('page-'+name);
-  if(!el)return;
-  el.style.display=['login','signup','pricing'].includes(name)?'flex':'block';
+  if(!el){console.warn('page not found:',name);return;}
+  const flexPages=['login','signup','pricing','paywall'];
+  el.style.display=flexPages.includes(name)?'flex':'block';
   const hdrRight=document.getElementById('hdrRight');
-  if(['landing','pricing'].includes(name)) hdrRight.innerHTML=`<button class="btn btn-o" onclick="showPage('login')">Log in</button><button class="btn btn-p" onclick="showPage('signup')">Get started</button>`;
-  else if(['login','signup'].includes(name)) hdrRight.innerHTML=`<button class="btn btn-o" onclick="showPage('${name==='login'?'signup':'login'}')">${name==='login'?'Sign up':'Log in'}</button>`;
+  if(!hdrRight) return;
+  if(['landing','pricing'].includes(name)){
+    hdrRight.innerHTML=`<button class="btn btn-o" onclick="showPage('login')">Log in</button><button class="btn btn-p" onclick="showPage('pricing')">View plans</button>`;
+  } else if(['login','signup'].includes(name)){
+    hdrRight.innerHTML=`<button class="btn btn-o" onclick="showPage('${name==='login'?'signup':'login'}')">${name==='login'?'Sign up':'Log in'}</button>`;
+  } else if(name==='paywall'){
+    hdrRight.innerHTML=`<span style="font-size:12px;color:var(--muted)">${G.user?.email||''}</span><button class="btn btn-d" onclick="doLogout()" style="font-size:12px">Log out</button>`;
+  }
 }
 function showView(name,el){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
