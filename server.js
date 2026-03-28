@@ -12,7 +12,14 @@ const PORT = process.env.PORT || 3737;
 const JWT_SECRET = process.env.JWT_SECRET || 'leadgen-secret-change-in-production';
 const RAPID_KEY = process.env.RAPID_KEY || '329f1147c9msh86f85560447ea6ap15a93djsnf892c1bfece5';
 
-app.use(express.json());
+// Use raw body for Stripe webhook, JSON for everything else
+app.use((req, res, next) => {
+  if (req.originalUrl === '/api/stripe-webhook') {
+    express.raw({ type: 'application/json' })(req, res, next);
+  } else {
+    express.json()(req, res, next);
+  }
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── USERS (in-memory — replace with a DB like PlanetScale or Supabase later)
@@ -105,11 +112,7 @@ function checkDailyLimit(email, limit) {
   return true;
 }
 
-const STRIPE_PRICES = {
-  basic:  process.env.STRIPE_PRICE_BASIC  || '',
-  pro:    process.env.STRIPE_PRICE_PRO    || '',
-  agency: process.env.STRIPE_PRICE_AGENCY || ''
-};
+// STRIPE_PRICES defined below in Stripe section
 
 // ── AUTH MIDDLEWARE ────────────────────────────────────────────────────────
 function auth(req, res, next) {
@@ -343,7 +346,7 @@ app.post('/api/create-checkout', auth, async (req, res) => {
 });
 
 // Stripe webhook — handles payment confirmation and subscription cancellation
-app.post('/api/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+app.post('/api/stripe-webhook', async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
