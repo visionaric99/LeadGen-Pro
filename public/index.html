@@ -801,6 +801,19 @@ function renderUpgradeView() {
 }
 
 async function startCheckout(plan) {
+  const btn = event?.target;
+  if (btn) { btn.disabled=true; btn.textContent='Redirecting…'; }
+  try {
+    const res = await api('/api/create-checkout','POST',{ plan });
+    if (res.error) { showToast(res.error,'e'); if(btn){btn.disabled=false;btn.textContent='Subscribe →';} return; }
+    if (res.url) window.location.href = res.url;
+  } catch(e) {
+    showToast('Something went wrong — try again','e');
+    if (btn) { btn.disabled=false; btn.textContent='Subscribe →'; }
+  }
+}
+
+async function startCheckout_OLD(plan) {
   showToast('Redirecting to checkout…','i');
   const res=await api('/api/create-checkout','POST',{plan});
   if(res.error){showToast('Error: '+res.error,'e');return;}
