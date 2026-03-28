@@ -113,6 +113,57 @@ function calcScore(rating, reviews) {
   return Math.round(Math.min((rating / 5) * 60, 60) + Math.min(Math.log10((reviews || 1) + 1) * 15, 40));
 }
 
+// ── REVENUE ESTIMATOR ──────────────────────────────────────────────────────
+// Estimates monthly revenue tier based on category, rating, reviews, presence
+const HIGH_VALUE_CATS = [
+  'lawyer','attorney','law','legal','dentist','dental','orthodont','oral',
+  'doctor','physician','medical','clinic','hospital','surgery','plastic',
+  'accountant','accounting','cpa','financial','wealth','investment','insurance',
+  'real estate','realtor','mortgage','property','contractor','construction',
+  'roofing','plumber','plumbing','electrician','hvac','heating','cooling',
+  'auto dealer','car dealer','dealership','mechanic','auto repair',
+  'architect','engineering','consultant','consulting','marketing agency',
+  'software','tech','it service','spa','medspa','med spa','chiropractor',
+  'veterinarian','vet clinic','optometrist','pharmacy'
+];
+
+const MID_VALUE_CATS = [
+  'restaurant','bar','cafe','catering','bakery','gym','fitness','yoga',
+  'salon','barber','beauty','nail','massage','florist','jewelry','retail',
+  'boutique','clothing','furniture','appliance','landscaping','cleaning',
+  'moving','storage','printing','photography','videography','event',
+  'daycare','school','tutor','hotel','motel','inn','vacation'
+];
+
+function estimateRevenue(name, cat, rating, reviews, hasWebsite) {
+  const catLower = (cat || '').toLowerCase();
+  const nameLower = (name || '').toLowerCase();
+  const combined = catLower + ' ' + nameLower;
+
+  // Base multiplier from category
+  let base = 1.0;
+  if (HIGH_VALUE_CATS.some(k => combined.includes(k))) base = 3.0;
+  else if (MID_VALUE_CATS.some(k => combined.includes(k))) base = 1.8;
+
+  // Rating signal — well-rated businesses are busier
+  const ratingMult = rating >= 4.5 ? 1.4 : rating >= 4.0 ? 1.2 : rating >= 3.5 ? 1.0 : 0.8;
+
+  // Review count signal — proxy for customer volume
+  const reviewScore = Math.min(Math.log10((reviews || 1) + 1) / Math.log10(500), 1.0);
+  const reviewMult = 0.6 + reviewScore * 0.8;
+
+  // Website presence — established businesses have sites
+  const webMult = hasWebsite ? 1.1 : 0.85;
+
+  // Final score 0-100
+  const score = Math.min(base * ratingMult * reviewMult * webMult * 33, 100);
+
+  // Map to revenue tiers
+  if (score >= 65) return 100000;  // $100K+/mo
+  if (score >= 35) return 50000;   // $50K+/mo
+  return 10000;                     // $10K+/mo
+}
+
 async function searchGoogle(query, location, limit, offset=0) {
   const params = new URLSearchParams({ query: `${query} in ${location}`, limit: String(Math.min(limit, 20)), language: 'en', region: 'us', offset: String(offset) });
   const data = await rapidFetch('local-business-data.p.rapidapi.com', '/search?' + params);
@@ -124,7 +175,9 @@ async function searchGoogle(query, location, limit, offset=0) {
     state: b.state || '', zip: b.zipcode || '',
     rating: b.rating || 0, reviews: b.reviews || 0,
     hours: b.working_hours_old_format || '', source: 'Google Maps',
-    score: calcScore(b.rating, b.reviews), notes: ''
+    score: calcScore(b.rating, b.reviews),
+    estRevenue: estimateRevenue(b.name, b.type || b.subtypes?.[0], b.rating, b.reviews, !!(b.website)),
+    notes: ''
   }));
 }
 
@@ -243,7 +296,7 @@ app.post('/api/stripe-webhook', express.raw({ type: 'application/json' }), async
 
 // ── SEARCH ─────────────────────────────────────────────────────────────────
 app.get('/api/search', auth, async (req, res) => {
-  const { q, loc, limit, noWebsite } = req.query;
+  const { q, loc, limit, noWebsite, minRevenue } = req.query;
   if (!q || !loc) return res.status(400).json({ error: 'Missing search query or location' });
   const user = users.get(req.user.email);
   if (!user) return res.status(401).json({ error: 'User not found' });
@@ -262,7 +315,12 @@ app.get('/api/search', auth, async (req, res) => {
   const cached = getCached(cacheKey);
   if (cached) {
     console.log(`[CACHE HIT] ${cacheKey}`);
-    return res.json({ leads: cached, errors: [], total: cached.length, plan: user.plan, exportLimit: planLimits.exports, cached: true });
+    // Apply revenue filter to cached results too
+    let filteredCached = cached;
+    if (minRevenue && parseInt(minRevenue) > 0) {
+      filteredCached = cached.filter(l => (l.estRevenue || 10000) >= parseInt(minRevenue));
+    }
+    return res.json({ leads: filteredCached, errors: [], total: filteredCached.length, plan: user.plan, exportLimit: planLimits.exports, cached: true });
   }
 
   const errors = [];
@@ -318,7 +376,14 @@ app.get('/api/search', auth, async (req, res) => {
   }
 
   setCache(cacheKey, leads);
-  res.json({ leads, errors, total: leads.length, plan: user.plan, exportLimit: planLimits.exports, filtered: filterNoWebsite });
+
+  // Apply revenue filter post-search
+  let finalLeads = leads;
+  if (minRevenue && parseInt(minRevenue) > 0) {
+    finalLeads = leads.filter(l => (l.estRevenue || 10000) >= parseInt(minRevenue));
+  }
+
+  res.json({ leads: finalLeads, errors, total: finalLeads.length, plan: user.plan, exportLimit: planLimits.exports, filtered: filterNoWebsite });
 });
 // ── HEALTH ─────────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
