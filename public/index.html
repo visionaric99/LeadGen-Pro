@@ -103,7 +103,7 @@ html{font-size:15px}body{background:var(--bg);color:var(--text);font-family:var(
 .ract{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
 
 /* SEARCH GRID */
-.sgrid{display:grid;grid-template-columns:1fr 1fr 120px 140px 110px;gap:8px;align-items:end;margin-bottom:.9rem}
+.sgrid{display:grid;grid-template-columns:1fr 1fr 100px 130px 150px 110px;gap:8px;align-items:end;margin-bottom:.9rem}
 .bulk-grid{display:flex;flex-direction:column;gap:8px}
 .bulk-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}
 
@@ -202,6 +202,10 @@ td.lk a{color:inherit;text-decoration:none}td.lk a:hover{text-decoration:underli
 
 /* HIGH OPPORTUNITY BADGE */
 .ho-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(245,200,66,0.12);color:var(--yellow);border:1px solid rgba(245,200,66,0.25);border-radius:999px;padding:2px 8px;font-size:10px;font-family:var(--mono);font-weight:500;white-space:nowrap}
+.rev-badge{display:inline-flex;align-items:center;gap:3px;border-radius:999px;padding:2px 8px;font-size:10px;font-family:var(--mono);font-weight:500;white-space:nowrap;margin-left:4px}
+.rev-10k{background:rgba(67,224,160,0.1);color:var(--green);border:1px solid rgba(67,224,160,0.2)}
+.rev-50k{background:rgba(79,142,247,0.1);color:var(--accent);border:1px solid rgba(79,142,247,0.2)}
+.rev-100k{background:rgba(245,200,66,0.12);color:var(--yellow);border:1px solid rgba(245,200,66,0.25)}
 .ho-badge::before{content:'★';font-size:9px}
 tbody tr.high-opp{border-left:2px solid var(--yellow)}
 
@@ -406,6 +410,14 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
             </div>
             <div class="fld"><label>Results Limit</label>
               <select id="searchLimit"><option value="10">10 results</option><option value="20" selected>20 results</option><option value="50">50 results</option><option value="100">100 results</option></select>
+            </div>
+            <div class="fld"><label>Est. Revenue</label>
+              <select id="minRevenue">
+                <option value="0">Any revenue</option>
+                <option value="10000">$10K+/mo</option>
+                <option value="50000">$50K+/mo</option>
+                <option value="100000">$100K+/mo</option>
+              </select>
             </div>
             <div class="fld"><label>&nbsp;</label><button class="btn btn-p" id="searchBtn" onclick="runSearch()" style="width:100%">🔍 Search</button></div>
           </div>
@@ -848,7 +860,8 @@ async function runSearch() {
   try {
     const limit=document.getElementById('searchLimit')?.value||'20';
     const noWebsite=G.filters.noWebsite;
-    const filterParam=noWebsite?'&noWebsite=true':'';
+    const minRev=document.getElementById('minRevenue')?.value||'0';
+    const filterParam=(noWebsite?'&noWebsite=true':'')+(minRev!=='0'?'&minRevenue='+minRev:'');
     const res=await api(`/api/search?q=${encodeURIComponent(q)}&loc=${encodeURIComponent(loc)}&limit=${limit}${filterParam}`,'GET');
     setProg('pfill','ppct','ptxt',100,'Done!');
     if(res.error){pw.classList.remove('on');showEb(res.error,'eb');return;}
