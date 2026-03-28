@@ -294,148 +294,136 @@ app.get('/api/usage', auth, (req, res) => {
 });
 
 // ── STRIPE ─────────────────────────────────────────────────────────────────
+const STRIPE_PRICES = {
+  basic:  process.env.STRIPE_PRICE_BASIC  || 'price_1TG1ZpR9NSYpy4Lohn26QWko',
+  pro:    process.env.STRIPE_PRICE_PRO    || 'price_1TG1aNR9NSYpy4Lop8aYHn8t',
+  agency: process.env.STRIPE_PRICE_AGENCY || 'price_1TG1avR9NSYpy4Lomvkb9gNG'
+};
+
+const APP_URL = process.env.APP_URL || 'https://leadgen-pro-production-2804.up.railway.app';
+
+// Create Stripe checkout session
 app.post('/api/create-checkout', auth, async (req, res) => {
   const { plan } = req.body;
   const priceId = STRIPE_PRICES[plan];
-  if (!priceId) return res.status(400).json({ error: 'Stripe not configured yet. See README for setup instructions.' });
+  if (!priceId) return res.status(400).json({ error: 'Invalid plan' });
+
+  const user = users.get(req.user.email);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
   try {
-    const user = users.get(req.user.email);
-    if (!user.stripeCustomerId) {
-      const customer = await stripe.customers.create({ email: user.email });
-      user.stripeCustomerId = customer.id;
+    // Create or retrieve Stripe customer
+    let customerId = user.stripeCustomerId;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        metadata: { plan }
+      });
+      customerId = customer.id;
+      user.stripeCustomerId = customerId;
     }
+
     const session = await stripe.checkout.sessions.create({
-      customer: user.stripeCustomerId,
+      customer: customerId,
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
-      success_url: `${process.env.APP_URL || 'http://localhost:' + PORT}/?upgraded=true`,
-      cancel_url: `${process.env.APP_URL || 'http://localhost:' + PORT}/`
+      success_url: `${APP_URL}/?upgraded=true&plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${APP_URL}/?cancelled=true`,
+      metadata: { email: user.email, plan },
+      allow_promotion_codes: true,
+      billing_address_collection: 'auto',
     });
+
     res.json({ url: session.url });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    console.error('[STRIPE ERROR]', e.message);
+    res.status(500).json({ error: 'Failed to create checkout: ' + e.message });
+  }
 });
 
+// Stripe webhook — handles payment confirmation and subscription cancellation
 app.post('/api/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
   let event;
   try {
-    event = stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], process.env.STRIPE_WEBHOOK_SECRET || '');
-  } catch { return res.status(400).send('Webhook error'); }
+    if (webhookSecret) {
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } else {
+      event = JSON.parse(req.body);
+      console.warn('[WEBHOOK] No webhook secret set — skipping signature verification');
+    }
+  } catch (e) {
+    console.error('[WEBHOOK] Signature verification failed:', e.message);
+    return res.status(400).send('Webhook error: ' + e.message);
+  }
+
+  console.log('[WEBHOOK] Event:', event.type);
+
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    for (const [, user] of users) {
-      if (user.stripeCustomerId === session.customer) {
-        const sub = await stripe.subscriptions.retrieve(session.subscription);
-        const priceId = sub.items.data[0].price.id;
-        const plan = Object.entries(STRIPE_PRICES).find(([, p]) => p === priceId)?.[0] || 'basic';
+    const email = session.metadata?.email || session.customer_email;
+    const plan = session.metadata?.plan;
+
+    if (email && plan && PLANS[plan]) {
+      const user = users.get(email.toLowerCase());
+      if (user) {
         user.plan = plan;
+        user.stripeCustomerId = session.customer;
+        user.stripeSubscriptionId = session.subscription;
+        console.log(`[STRIPE] Upgraded ${email} to ${plan}`);
+      }
+    }
+  }
+
+  if (event.type === 'customer.subscription.deleted') {
+    const sub = event.data.object;
+    const customerId = sub.customer;
+    // Find user by stripe customer ID
+    for (const [email, user] of users.entries()) {
+      if (user.stripeCustomerId === customerId) {
+        user.plan = 'pending';
+        user.stripeSubscriptionId = null;
+        console.log(`[STRIPE] Cancelled subscription for ${email}`);
         break;
       }
     }
   }
+
+  if (event.type === 'customer.subscription.updated') {
+    const sub = event.data.object;
+    const customerId = sub.customer;
+    // Handle plan changes
+    for (const [email, user] of users.entries()) {
+      if (user.stripeCustomerId === customerId) {
+        const priceId = sub.items?.data?.[0]?.price?.id;
+        const newPlan = Object.keys(STRIPE_PRICES).find(k => STRIPE_PRICES[k] === priceId);
+        if (newPlan) {
+          user.plan = newPlan;
+          console.log(`[STRIPE] Updated ${email} plan to ${newPlan}`);
+        }
+        break;
+      }
+    }
+  }
+
   res.json({ received: true });
 });
 
-// ── SEARCH ─────────────────────────────────────────────────────────────────
-app.get('/api/search', auth, requirePlan, async (req, res) => {
-  const { q, loc, limit, noWebsite, minRevenue } = req.query;
-  if (!q || !loc) return res.status(400).json({ error: 'Missing search query or location' });
+// Get subscription status
+app.get('/api/subscription', auth, async (req, res) => {
   const user = users.get(req.user.email);
-  if (!user) return res.status(401).json({ error: 'User not found' });
-  const planLimits = PLANS[user.plan] || PLANS.free;
-  const targetLimit = Math.min(parseInt(limit) || 20, 100);
-  const filterNoWebsite = noWebsite === 'true';
+  if (!user) return res.status(404).json({ error: 'User not found' });
 
-  if (!checkRateLimit(user.email, 10)) {
-    return res.status(429).json({ error: 'Too many searches — wait a minute and try again' });
-  }
-  // Check daily lead cap
-  const isAdmin = ADMIN_EMAILS.includes(user.email);
-  const dailyLeadLimit = planLimits.dailyLeads || 100;
-  const leadsUsedToday = getDailyLeadsUsed(user.email);
-  if (!isAdmin && leadsUsedToday >= dailyLeadLimit) {
-    return res.status(429).json({
-      error: `Daily lead limit reached (${dailyLeadLimit} leads/day on ${planLimits.label} plan). Resets at midnight. Upgrade for more.`,
-      limitReached: true
-    });
-  }
-
-  const cacheKey = `${q.toLowerCase().trim()}:${loc.toLowerCase().trim()}:${targetLimit}:${filterNoWebsite}`;
-  const cached = getCached(cacheKey);
-  if (cached) {
-    console.log(`[CACHE HIT] ${cacheKey}`);
-    // Apply revenue filter to cached results too
-    let filteredCached = cached;
-    if (minRevenue && parseInt(minRevenue) > 0) {
-      filteredCached = cached.filter(l => (l.estRevenue || 10000) >= parseInt(minRevenue));
-    }
-    return res.json({ leads: filteredCached, errors: [], total: filteredCached.length, plan: user.plan, exportLimit: planLimits.exports, cached: true });
-  }
-
-  const errors = [];
-  let leads = [];
-  const seen = new Set();
-  console.log(`[SEARCH] q="${q}" loc="${loc}" limit=${targetLimit} noWebsite=${filterNoWebsite}`);
-
-  if (filterNoWebsite) {
-    // Smart paginating fetch — keeps calling API in batches of 20 until we
-    // collect enough no-website results or exhaust results (max 8 API calls)
-    let offset = 0;
-    let apiCalls = 0;
-    const MAX_CALLS = 8;
-
-    while (leads.length < targetLimit && apiCalls < MAX_CALLS) {
-      try {
-        const batch = await searchGoogle(q, loc, 20, offset);
-        apiCalls++;
-        if (!batch.length) break;
-        for (const b of batch) {
-          const key = (b.name + b.city).toLowerCase().replace(/\s/g, '');
-          if (seen.has(key)) continue;
-          seen.add(key);
-          if (!b.website || !b.website.trim()) {
-            leads.push(b);
-            if (leads.length >= targetLimit) break;
-          }
-        }
-        offset += 20;
-        if (batch.length < 20) break;
-      } catch(e) {
-        errors.push(e.message);
-        console.error('[SEARCH ERROR]', e.message);
-        break;
-      }
-    }
-    console.log(`[SEARCH] ${leads.length} no-website results in ${apiCalls} API calls`);
-  } else {
-    try {
-      const batch = await searchGoogle(q, loc, targetLimit, 0);
-      for (const b of batch) {
-        const key = (b.name + b.city).toLowerCase().replace(/\s/g, '');
-        if (!seen.has(key)) { seen.add(key); leads.push(b); }
-      }
-    } catch(e) {
-      errors.push(e.message);
-      console.error('[SEARCH ERROR]', e.message);
-    }
-  }
-
-  if (!leads.length && errors.length) {
-    return res.json({ leads: [], errors, total: 0, plan: user.plan, exportLimit: planLimits.exports, debug: errors.join(' | ') });
-  }
-
-  setCache(cacheKey, leads);
-
-  // Track leads generated toward daily cap
-  if (!isAdmin) addDailyLeads(user.email, leads.length);
-
-  // Apply revenue filter post-search
-  let finalLeads = leads;
-  if (minRevenue && parseInt(minRevenue) > 0) {
-    finalLeads = leads.filter(l => (l.estRevenue || 10000) >= parseInt(minRevenue));
-  }
-
-  res.json({ leads: finalLeads, errors, total: finalLeads.length, plan: user.plan, exportLimit: planLimits.exports, filtered: filterNoWebsite });
+  res.json({
+    plan: user.plan,
+    planLabel: PLANS[user.plan]?.label || 'No plan',
+    email: user.email,
+    stripeCustomerId: user.stripeCustomerId || null,
+    features: PLANS[user.plan] || {}
+  });
 });
 // ── HEALTH ─────────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
