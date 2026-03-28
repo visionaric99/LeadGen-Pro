@@ -26,12 +26,27 @@ users.set('visionaricscaling@gmail.com', {
 });
 
 // ── PLANS ──────────────────────────────────────────────────────────────────
+// No free tier — minimum $29/mo required to access the tool
 const PLANS = {
-  free:   { exports: 0,      searchLimit: 100, dailySearches: 3,         label: 'Free',   price: 0   },
-  basic:  { exports: 50,     searchLimit: 100, dailySearches: 50,        label: 'Basic',  price: 29  },
-  pro:    { exports: 200,    searchLimit: 100, dailySearches: 200,       label: 'Pro',    price: 79  },
-  agency: { exports: 999999, searchLimit: 100, dailySearches: 999999,    label: 'Agency', price: 199 }
+  basic:  {
+    exports: 999999, searchLimit: 100, dailyLeads: 100,
+    bulkSearch: false, community: false, prioritySupport: false,
+    label: 'Basic', price: 29
+  },
+  pro:    {
+    exports: 999999, searchLimit: 100, dailyLeads: 500,
+    bulkSearch: true, community: true, prioritySupport: true,
+    label: 'Pro', price: 79
+  },
+  agency: {
+    exports: 999999, searchLimit: 100, dailyLeads: 1000,
+    bulkSearch: true, community: true, prioritySupport: true,
+    label: 'Agency', price: 199
+  }
 };
+
+// Admin override — your account bypasses all limits
+const ADMIN_EMAILS = ['visionaricscaling@gmail.com'];
 
 // ── CACHE (24hr) ───────────────────────────────────────────────────────────
 const searchCache = new Map();
@@ -68,8 +83,20 @@ function checkRateLimit(email, maxPerMinute = 10) {
 
 // ── DAILY SEARCH COUNTER ───────────────────────────────────────────────────
 const dailyCounts = new Map();
+function getDailyLeadsUsed(email) {
+  const today = new Date().toISOString().slice(0, 10);
+  return dailyCounts.get(email + ':leads:' + today) || 0;
+}
+
+function addDailyLeads(email, count) {
+  const today = new Date().toISOString().slice(0, 10);
+  const key = email + ':leads:' + today;
+  dailyCounts.set(key, (dailyCounts.get(key) || 0) + count);
+}
+
 function checkDailyLimit(email, limit) {
-  if (limit >= 999999) return true; // agency = unlimited
+  if (ADMIN_EMAILS.includes(email)) return true;
+  if (limit >= 999999) return true;
   const today = new Date().toISOString().slice(0, 10);
   const key = email + ':' + today;
   const count = dailyCounts.get(key) || 0;
@@ -88,8 +115,22 @@ const STRIPE_PRICES = {
 function auth(req, res, next) {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'Not authenticated' });
-  try { req.user = jwt.verify(token, JWT_SECRET); next(); }
-  catch { res.status(401).json({ error: 'Session expired — please log in again' }); }
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+    next();
+  } catch {
+    res.status(401).json({ error: 'Session expired — please log in again' });
+  }
+}
+
+function requirePlan(req, res, next) {
+  const user = users.get(req.user?.email);
+  if (!user) return res.status(401).json({ error: 'User not found' });
+  if (ADMIN_EMAILS.includes(user.email)) return next();
+  if (!user.plan || user.plan === 'pending') {
+    return res.status(402).json({ error: 'Subscription required', requiresPayment: true });
+  }
+  next();
 }
 
 // ── RAPIDAPI ───────────────────────────────────────────────────────────────
@@ -188,10 +229,11 @@ app.post('/api/signup', async (req, res) => {
   if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
   if (users.has(email.toLowerCase())) return res.status(400).json({ error: 'An account with that email already exists' });
   const hashed = await bcrypt.hash(password, 10);
-  const user = { email: email.toLowerCase(), password: hashed, plan: 'free', stripeCustomerId: null, createdAt: new Date().toISOString() };
+  // New users start as 'pending' — must subscribe before accessing the tool
+  const user = { email: email.toLowerCase(), password: hashed, plan: 'pending', stripeCustomerId: null, createdAt: new Date().toISOString() };
   users.set(email.toLowerCase(), user);
-  const token = jwt.sign({ email: email.toLowerCase(), plan: 'free' }, JWT_SECRET, { expiresIn: '30d' });
-  res.json({ token, email: email.toLowerCase(), plan: 'free', planLabel: 'Free', limits: PLANS.free });
+  const token = jwt.sign({ email: email.toLowerCase(), plan: 'pending' }, JWT_SECRET, { expiresIn: '30d' });
+  res.json({ token, email: email.toLowerCase(), plan: 'pending', planLabel: 'Choose a plan', requiresPayment: true });
 });
 
 app.post('/api/login', async (req, res) => {
@@ -242,13 +284,13 @@ app.post('/api/update-profile', auth, async (req, res) => {
 app.get('/api/usage', auth, (req, res) => {
   const user = users.get(req.user.email);
   if (!user) return res.status(404).json({ error: 'User not found' });
-  const today = new Date().toISOString().slice(0, 10);
-  const key = user.email + ':' + today;
-  const used = dailyCounts.get(key) || 0;
-  const plan = PLANS[user.plan] || PLANS.free;
-  const limit = plan.dailySearches;
-  const remaining = limit >= 999999 ? 999999 : Math.max(0, limit - used);
-  res.json({ used, limit, remaining, plan: user.plan, planLabel: plan.label });
+  const isAdmin = ADMIN_EMAILS.includes(user.email);
+  const plan = PLANS[user.plan];
+  if (!plan) return res.json({ used: 0, limit: 0, remaining: 0, plan: user.plan, planLabel: 'No plan', requiresPayment: true });
+  const used = isAdmin ? 0 : getDailyLeadsUsed(user.email);
+  const limit = isAdmin ? 999999 : (plan.dailyLeads || 100);
+  const remaining = isAdmin ? 999999 : Math.max(0, limit - used);
+  res.json({ used, limit, remaining, plan: user.plan, planLabel: plan.label, features: plan });
 });
 
 // ── STRIPE ─────────────────────────────────────────────────────────────────
@@ -295,7 +337,7 @@ app.post('/api/stripe-webhook', express.raw({ type: 'application/json' }), async
 });
 
 // ── SEARCH ─────────────────────────────────────────────────────────────────
-app.get('/api/search', auth, async (req, res) => {
+app.get('/api/search', auth, requirePlan, async (req, res) => {
   const { q, loc, limit, noWebsite, minRevenue } = req.query;
   if (!q || !loc) return res.status(400).json({ error: 'Missing search query or location' });
   const user = users.get(req.user.email);
@@ -307,8 +349,15 @@ app.get('/api/search', auth, async (req, res) => {
   if (!checkRateLimit(user.email, 10)) {
     return res.status(429).json({ error: 'Too many searches — wait a minute and try again' });
   }
-  if (!checkDailyLimit(user.email, planLimits.dailySearches)) {
-    return res.status(429).json({ error: `Daily search limit reached (${planLimits.dailySearches}/day on ${planLimits.label} plan). Upgrade for more.` });
+  // Check daily lead cap
+  const isAdmin = ADMIN_EMAILS.includes(user.email);
+  const dailyLeadLimit = planLimits.dailyLeads || 100;
+  const leadsUsedToday = getDailyLeadsUsed(user.email);
+  if (!isAdmin && leadsUsedToday >= dailyLeadLimit) {
+    return res.status(429).json({
+      error: `Daily lead limit reached (${dailyLeadLimit} leads/day on ${planLimits.label} plan). Resets at midnight. Upgrade for more.`,
+      limitReached: true
+    });
   }
 
   const cacheKey = `${q.toLowerCase().trim()}:${loc.toLowerCase().trim()}:${targetLimit}:${filterNoWebsite}`;
@@ -376,6 +425,9 @@ app.get('/api/search', auth, async (req, res) => {
   }
 
   setCache(cacheKey, leads);
+
+  // Track leads generated toward daily cap
+  if (!isAdmin) addDailyLeads(user.email, leads.length);
 
   // Apply revenue filter post-search
   let finalLeads = leads;
