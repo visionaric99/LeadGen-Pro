@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -103,7 +104,7 @@ html{font-size:15px}body{background:var(--bg);color:var(--text);font-family:var(
 .ract{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
 
 /* SEARCH GRID */
-.sgrid{display:grid;grid-template-columns:1fr 1fr 100px 130px 150px 110px;gap:8px;align-items:end;margin-bottom:.9rem}
+.sgrid{display:grid;grid-template-columns:1fr 1fr 120px 140px 110px;gap:8px;align-items:end;margin-bottom:.9rem}
 .bulk-grid{display:flex;flex-direction:column;gap:8px}
 .bulk-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}
 
@@ -202,10 +203,6 @@ td.lk a{color:inherit;text-decoration:none}td.lk a:hover{text-decoration:underli
 
 /* HIGH OPPORTUNITY BADGE */
 .ho-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(245,200,66,0.12);color:var(--yellow);border:1px solid rgba(245,200,66,0.25);border-radius:999px;padding:2px 8px;font-size:10px;font-family:var(--mono);font-weight:500;white-space:nowrap}
-.rev-badge{display:inline-flex;align-items:center;gap:3px;border-radius:999px;padding:2px 8px;font-size:10px;font-family:var(--mono);font-weight:500;white-space:nowrap;margin-left:4px}
-.rev-10k{background:rgba(67,224,160,0.1);color:var(--green);border:1px solid rgba(67,224,160,0.2)}
-.rev-50k{background:rgba(79,142,247,0.1);color:var(--accent);border:1px solid rgba(79,142,247,0.2)}
-.rev-100k{background:rgba(245,200,66,0.12);color:var(--yellow);border:1px solid rgba(245,200,66,0.25)}
 .ho-badge::before{content:'★';font-size:9px}
 tbody tr.high-opp{border-left:2px solid var(--yellow)}
 
@@ -322,427 +319,81 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
     <div class="pricing-title">Simple pricing</div>
     <div class="pricing-sub">Start free. Upgrade when you need more.</div>
     <div class="pricing-grid">
-      <div class="price-card">
-        <div class="price-name">Basic</div>
-        <div class="price-amount">$29<span>/mo</span></div>
-        <div class="price-desc">For freelancers getting started</div>
-        <ul class="price-features"><li>50 lead exports/month</li><li>Google Maps data</li><li>Bulk search</li><li>CRM pipeline</li><li>Email outreach</li></ul>
-        <button class="btn btn-o" style="width:100%" onclick="showPage('signup')">Get started</button>
-      </div>
-      <div class="price-card popular">
-        <div class="popular-badge">Most popular</div>
-        <div class="price-name">Pro</div>
-        <div class="price-amount">$79<span>/mo</span></div>
-        <div class="price-desc">For agencies running campaigns</div>
-        <ul class="price-features"><li>200 lead exports/month</li><li>Google Maps data</li><li>Bulk search</li><li>CRM pipeline</li><li>Email outreach</li><li>Priority support</li></ul>
-        <button class="btn btn-p" style="width:100%" onclick="showPage('signup')">Get started</button>
-      </div>
-      <div class="price-card">
-        <div class="price-name">Agency</div>
-        <div class="price-amount">$199<span>/mo</span></div>
-        <div class="price-desc">For teams with unlimited needs</div>
-        <ul class="price-features"><li>Unlimited exports</li><li>Google Maps data</li><li>Bulk search</li><li>CRM pipeline</li><li>Email outreach</li><li>White-label CSV</li></ul>
-        <button class="btn btn-o" style="width:100%" onclick="showPage('signup')">Get started</button>
-      </div>
+          <div class="price-card">
+            <div class="price-name">Basic</div>
+            <div class="price-amount">$29<span>/mo</span></div>
+            <div class="price-desc">For freelancers getting started</div>
+            <ul class="price-features">
+              <li>100 leads generated per day</li>
+              <li>Google Maps live data</li>
+              <li>Revenue estimator badges</li>
+              <li>CRM pipeline</li>
+              <li>Email outreach composer</li>
+              <li>CSV export</li>
+            </ul>
+            <button class="btn btn-o" style="width:100%" onclick="showPage('signup')">Get started →</button>
+          </div>
+          <div class="price-card popular">
+            <div class="popular-badge">Most popular</div>
+            <div class="price-name">Pro</div>
+            <div class="price-amount">$79<span>/mo</span></div>
+            <div class="price-desc">For agencies running multiple campaigns</div>
+            <ul class="price-features">
+              <li>500 leads generated per day</li>
+              <li>Everything in Basic</li>
+              <li>Bulk search (multiple cities at once)</li>
+              <li>Community chat access</li>
+              <li>Priority support</li>
+            </ul>
+            <button class="btn btn-p" style="width:100%" onclick="showPage('signup')">Get started →</button>
+          </div>
+          <div class="price-card">
+            <div class="price-name">Agency</div>
+            <div class="price-amount">$199<span>/mo</span></div>
+            <div class="price-desc">For high-volume teams and power users</div>
+            <ul class="price-features">
+              <li>1,000 leads generated per day</li>
+              <li>Everything in Pro</li>
+              <li>Bulk search across any city</li>
+              <li>Unlimited CSV exports</li>
+              <li>Dedicated support</li>
+            </ul>
+            <button class="btn btn-o" style="width:100%" onclick="showPage('signup')">Get started →</button>
+          </div>
+        >
+<!-- PAYWALL PAGE -->
+<div id="page-paywall" style="display:none;flex:1;align-items:center;justify-content:center;flex-direction:column;padding:2rem;text-align:center">
+  <div style="font-family:var(--head);font-size:1.4rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.5rem">Choose your plan</div>
+  <div style="color:var(--muted);font-size:13px;margin-bottom:2rem;max-width:420px;line-height:1.7">Your account is ready. Subscribe to start generating leads — cancel anytime.</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:720px;width:100%;margin-bottom:1.5rem" id="paywallPlans">
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.3rem;text-align:left">
+      <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Basic</div>
+      <div style="font-family:var(--head);font-size:1.8rem;font-weight:800;margin-bottom:.5rem">$29<span style="font-size:12px;font-weight:400;color:var(--muted)">/mo</span></div>
+      <ul style="list-style:none;margin-bottom:1rem;font-size:12px;color:var(--muted);line-height:2">
+        <li>✓ 100 leads per day</li><li>✓ CRM pipeline</li><li>✓ Email outreach</li><li>✓ CSV export</li>
+      </ul>
+      <button class="btn btn-o" style="width:100%;justify-content:center" onclick="startCheckout('basic')">Subscribe →</button>
+    </div>
+    <div style="background:var(--bg3);border:2px solid var(--accent);border-radius:12px;padding:1.3rem;text-align:left;position:relative">
+      <div style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:10px;padding:2px 12px;border-radius:999px;font-family:var(--mono);white-space:nowrap">Most popular</div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Pro</div>
+      <div style="font-family:var(--head);font-size:1.8rem;font-weight:800;margin-bottom:.5rem">$79<span style="font-size:12px;font-weight:400;color:var(--muted)">/mo</span></div>
+      <ul style="list-style:none;margin-bottom:1rem;font-size:12px;color:var(--muted);line-height:2">
+        <li>✓ 500 leads per day</li><li>✓ Everything in Basic</li><li>✓ Bulk search</li><li>✓ Community chat</li>
+      </ul>
+      <button class="btn btn-p" style="width:100%;justify-content:center" onclick="startCheckout('pro')">Subscribe →</button>
+    </div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.3rem;text-align:left">
+      <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Agency</div>
+      <div style="font-family:var(--head);font-size:1.8rem;font-weight:800;margin-bottom:.5rem">$199<span style="font-size:12px;font-weight:400;color:var(--muted)">/mo</span></div>
+      <ul style="list-style:none;margin-bottom:1rem;font-size:12px;color:var(--muted);line-height:2">
+        <li>✓ 1,000 leads per day</li><li>✓ Everything in Pro</li><li>✓ Dedicated support</li>
+      </ul>
+      <button class="btn btn-o" style="width:100%;justify-content:center" onclick="startCheckout('agency')">Subscribe →</button>
     </div>
   </div>
+  <div style="font-size:12px;color:var(--muted)">Secure payment via Stripe · Cancel anytime · No contracts</div>
 </div>
-
-<!-- LOGIN -->
-<div id="page-login" style="display:none">
-  <div class="auth-wrap">
-    <div class="auth-card fadein">
-      <div class="auth-title">Welcome back</div>
-      <div class="auth-sub">Log in to your LeadGen Pro account</div>
-      <div class="auth-err" id="loginErr"></div>
-      <div class="auth-field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@email.com"></div>
-      <div class="auth-field"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
-      <button class="btn btn-p" style="width:100%;justify-content:center;padding:10px" onclick="doLogin()" id="loginBtn">Log in</button>
-      <div class="auth-switch">No account? <a onclick="showPage('signup')">Sign up free</a></div>
-    </div>
-  </div>
-</div>
-
-<!-- SIGNUP -->
-<div id="page-signup" style="display:none">
-  <div class="auth-wrap">
-    <div class="auth-card fadein">
-      <div class="auth-title">Get started free</div>
-      <div class="auth-sub">No credit card required</div>
-      <div class="auth-err" id="signupErr"></div>
-      <div class="auth-field"><label>Email</label><input type="email" id="signupEmail" placeholder="you@email.com"></div>
-      <div class="auth-field"><label>Password</label><input type="password" id="signupPass" placeholder="At least 6 characters"></div>
-      <button class="btn btn-p" style="width:100%;justify-content:center;padding:10px" onclick="doSignup()" id="signupBtn">Create account</button>
-      <div class="auth-switch">Have an account? <a onclick="showPage('login')">Log in</a></div>
-    </div>
-  </div>
-</div>
-
-<!-- DASHBOARD -->
-<div id="page-dashboard" style="display:none;flex:1;flex-direction:column;overflow:hidden">
-  <div class="app">
-    <nav class="side">
-      <div class="slbl">Search</div>
-      <div class="nav on" id="nav-search" onclick="showView('search',this)"><span class="ic">🔍</span>Find Leads</div>
-      <div class="nav" id="nav-bulk" onclick="showView('bulk',this)"><span class="ic">⚡</span>Bulk Search</div>
-      <div class="slbl">Manage</div>
-      <div class="nav" id="nav-saved" onclick="showView('saved',this)"><span class="ic">📋</span>Saved<span class="nb" id="savedBadge">0</span></div>
-      <div class="nav" id="nav-crm" onclick="showView('crm',this)"><span class="ic">📊</span>CRM Pipeline</div>
-      <div class="nav" id="nav-outreach" onclick="showView('outreach',this)"><span class="ic">📧</span>Email Outreach</div>
-      <div class="nav" id="nav-archive" onclick="showView('archive',this)"><span class="ic">🗄</span>Archive<span class="nb" id="archiveBadge">0</span></div>
-      <div class="slbl">Account</div>
-      <div class="nav" id="nav-community" onclick="showView('community',this)"><span class="ic">💬</span>Community<span class="nb" id="onlineBadge">0</span></div>
-      <div class="nav" id="nav-account" onclick="showView('account',this)"><span class="ic">👤</span>Account</div>
-      <div class="nav" id="nav-upgrade" onclick="showView('upgrade',this)"><span class="ic">⚡</span>Upgrade</div>
-      <div class="nav" onclick="doLogout()"><span class="ic">🚪</span>Log out</div>
-    </nav>
-    <div class="main">
-
-      <!-- SEARCH VIEW -->
-      <div class="view on" id="view-search">
-        <div class="spanel">
-          <div class="ptitle">Find Real Businesses</div>
-          <div class="sgrid">
-            <div class="fld"><label>Business Type</label><input id="q" type="text" placeholder="dentist, plumber, gym…"></div>
-            <div class="fld"><label>City / Location</label><input id="loc" type="text" placeholder="Miami FL, Austin TX…"></div>
-            <div class="fld"><label>Min Rating</label>
-              <select id="minR"><option value="0">Any</option><option value="3">3+★</option><option value="4">4+★</option><option value="4.5">4.5+★</option></select>
-            </div>
-            <div class="fld"><label>Results Limit</label>
-              <select id="searchLimit"><option value="10">10 results</option><option value="20" selected>20 results</option><option value="50">50 results</option><option value="100">100 results</option></select>
-            </div>
-            <div class="fld"><label>Est. Revenue</label>
-              <select id="minRevenue">
-                <option value="0">Any revenue</option>
-                <option value="10000">$10K+/mo</option>
-                <option value="50000">$50K+/mo</option>
-                <option value="100000">$100K+/mo</option>
-              </select>
-            </div>
-            <div class="fld"><label>&nbsp;</label><button class="btn btn-p" id="searchBtn" onclick="runSearch()" style="width:100%">🔍 Search</button></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-size:12.5px;color:var(--muted)" onclick="toggleFilter('noWebsite')">
-              <div style="position:relative;width:36px;height:20px">
-                <div id="noWebTrack" style="width:36px;height:20px;border-radius:999px;background:var(--bg4);border:1px solid var(--border2);transition:background .2s"></div>
-                <div id="noWebThumb" style="position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--muted);transition:all .2s;pointer-events:none"></div>
-              </div>
-              Search only businesses <strong style="color:var(--text);margin-left:3px">without a website</strong> <span style="font-size:10px;background:rgba(79,142,247,0.15);color:var(--accent);border-radius:999px;padding:1px 7px;font-family:var(--mono)">pre-search filter</span>
-            </label>
-          </div>
-        </div>
-        <div class="ra">
-          <div class="eb" id="eb"></div>
-          <div class="prog" id="pw"><div class="plbl"><span id="ptxt">Searching…</span><span id="ppct">0%</span></div><div class="ptrack"><div class="pfill" id="pfill"></div></div></div>
-          <div class="rhdr" id="rhdr" style="display:none">
-            <div class="rc" id="rc">0 leads</div>
-            <div class="ract">
-              <button class="btn btn-o" style="font-size:11px;padding:5px 11px" onclick="selAll()">Select All</button>
-              <button class="btn btn-g" style="font-size:11px;padding:5px 11px" onclick="saveSelected()">💾 Save</button>
-              <button class="btn btn-y" style="font-size:11px;padding:5px 11px" onclick="archiveSelected()">🗄 Archive</button>
-              <button class="btn btn-p" style="font-size:11px;padding:5px 11px" onclick="openExport()">↓ Export CSV</button>
-            </div>
-          </div>
-          <div id="es" class="empty"><div style="font-size:2.5rem">🎯</div><div class="et">Find your next clients</div><div class="es">Enter a business type and city above — or press Enter after typing.</div></div>
-          <div class="tw" id="tw" style="display:none">
-            <table>
-              <thead><tr>
-                <th style="width:32px"><input type="checkbox" id="mc" onchange="toggleAll(this)" style="accent-color:var(--accent);cursor:pointer"></th>
-                <th>Business Name</th><th>Category</th><th>Phone</th><th>Website</th><th>Address</th><th>Rating</th><th>Score</th><th>Actions</th>
-              </tr></thead>
-              <tbody id="lb"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- BULK SEARCH VIEW -->
-      <div class="view" id="view-bulk">
-        <div class="spanel">
-          <div class="ptitle">Bulk Search</div>
-          <p style="color:var(--muted);font-size:13px;margin-bottom:1rem">Search multiple niches and cities at once. All results are combined into one list.</p>
-          <div id="bulkRows" class="bulk-grid"></div>
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button class="btn btn-o" onclick="addBulkRow()" style="font-size:12px">+ Add row</button>
-            <button class="btn btn-p" onclick="runBulkSearch()" id="bulkBtn">⚡ Search All</button>
-          </div>
-        </div>
-        <div class="ra">
-          <div class="eb" id="bulkEb"></div>
-          <div class="prog" id="bulkPw"><div class="plbl"><span id="bulkPtxt">Searching…</span><span id="bulkPpct">0%</span></div><div class="ptrack"><div class="pfill" id="bulkPfill"></div></div></div>
-          <div class="rhdr" id="bulkRhdr" style="display:none">
-            <div class="rc" id="bulkRc">0 leads</div>
-            <div class="ract">
-              <button class="btn btn-g" style="font-size:11px;padding:5px 11px" onclick="saveBulkAll()">💾 Save All</button>
-              <button class="btn btn-p" style="font-size:11px;padding:5px 11px" onclick="exportBulk()">↓ Export CSV</button>
-            </div>
-          </div>
-          <div id="bulkEmpty" class="empty"><div style="font-size:2.5rem">⚡</div><div class="et">Bulk search multiple targets</div><div class="es">Add rows above with different niches and cities, then search all at once.</div></div>
-          <div class="tw" id="bulkTw" style="display:none">
-            <table><thead><tr><th style="width:32px"></th><th>Business Name</th><th>Category</th><th>Phone</th><th>Website</th><th>Address</th><th>Rating</th><th>Score</th><th>Search</th><th></th></tr></thead><tbody id="bulkLb"></tbody></table>
-          </div>
-        </div>
-      </div>
-
-      <!-- SAVED VIEW -->
-      <div class="view" id="view-saved">
-        <div class="spanel"><div class="ptitle">Saved Leads</div></div>
-        <div class="ra">
-          <div class="rhdr"><div class="rc" id="sc3">0 leads</div><div class="ract"><button class="btn btn-p" style="font-size:11px;padding:5px 11px" onclick="exportSaved()">↓ Export All</button></div></div>
-          <div id="se2" class="empty"><div style="font-size:2.5rem">📋</div><div class="et">No saved leads</div><div class="es">Search for businesses and save them here.</div></div>
-          <div class="tw" id="st" style="display:none">
-            <table><thead><tr><th></th><th>Business Name</th><th>Category</th><th>Phone</th><th>Website</th><th>Address</th><th>Rating</th><th>Score</th><th>CRM Status</th><th></th></tr></thead><tbody id="sb"></tbody></table>
-          </div>
-        </div>
-      </div>
-
-      <!-- CRM VIEW -->
-      <div class="view" id="view-crm">
-        <div class="spanel" style="margin-bottom:0">
-          <div class="ptitle">CRM Pipeline</div>
-          <p style="color:var(--muted);font-size:13px">Drag leads through your sales pipeline. Click any card to update status or add notes.</p>
-        </div>
-        <div class="kanban" id="kanban"></div>
-      </div>
-
-      <!-- OUTREACH VIEW -->
-      <div class="view" id="view-outreach">
-        <div class="spanel"><div class="ptitle">Email Outreach</div></div>
-        <div class="outreach-grid">
-          <div>
-            <div style="font-size:11px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.9rem">Compose Email</div>
-            <div class="fld" style="margin-bottom:8px"><label>To (email address)</label><input id="outTo" type="email" placeholder="contact@business.com"></div>
-            <div class="fld" style="margin-bottom:8px"><label>Subject</label><input id="outSubject" type="text" placeholder="Quick question about your business…"></div>
-            <div class="fld" style="margin-bottom:8px"><label>Message</label><textarea id="outBody" style="min-height:160px;font-size:13px" placeholder="Hi [Name], I came across your business…"></textarea></div>
-            <div style="display:flex;gap:8px">
-              <button class="btn btn-p" onclick="sendEmail()" style="flex:1;justify-content:center">📧 Send Email</button>
-              <button class="btn btn-o" onclick="clearComposer()" style="font-size:12px">Clear</button>
-            </div>
-            <div style="margin-top:.8rem;font-size:11.5px;color:var(--muted);line-height:1.6">Note: Opens your default email client (mailto). For automated sending, connect an SMTP service like SendGrid.</div>
-          </div>
-          <div>
-            <div style="font-size:11px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.9rem">Email Templates</div>
-            <div style="display:flex;flex-direction:column;gap:10px">
-              <div class="ocard">
-                <div class="ocard-t">Cold outreach — web design</div>
-                <div class="ocard-s">For businesses with outdated websites</div>
-                <div class="template-body" onclick="useTemplate(this)">Hi [Name],
-
-I noticed [Business Name] doesn't have a modern website. I help local businesses like yours get more customers online.
-
-Would you be open to a quick 10-min call this week?
-
-[Your Name]</div>
-              </div>
-              <div class="ocard">
-                <div class="ocard-t">Cold outreach — SEO</div>
-                <div class="ocard-s">For businesses not ranking on Google</div>
-                <div class="template-body" onclick="useTemplate(this)">Hi [Name],
-
-I searched for [niche] in [city] and noticed [Business Name] wasn't showing up on the first page.
-
-I help local businesses rank higher on Google and get more calls. Interested in a free audit?
-
-[Your Name]</div>
-              </div>
-              <div class="ocard">
-                <div class="ocard-t">Lead gen service offer</div>
-                <div class="ocard-s">Selling your own leads to businesses</div>
-                <div class="template-body" onclick="useTemplate(this)">Hi [Name],
-
-I run a lead generation service for [niche] businesses in [city]. I have a list of potential customers looking for exactly what you offer.
-
-Would you be interested in getting access to these leads?
-
-[Your Name]</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ARCHIVE VIEW -->
-      <div class="view" id="view-archive">
-        <div class="spanel"><div class="ptitle">Archived Leads</div></div>
-        <div class="ra">
-          <div class="rhdr"><div class="rc" id="archiveCount">0 leads</div><div class="ract"><button class="btn btn-o" style="font-size:11px;padding:5px 11px" onclick="clearArchive()">Clear All</button></div></div>
-          <div id="archiveEmpty" class="empty"><div style="font-size:2.5rem">🗄</div><div class="et">No archived leads</div><div class="es">Leads you archive will appear here.</div></div>
-          <div class="tw" id="archiveTw" style="display:none">
-            <table><thead><tr><th></th><th>Business Name</th><th>Category</th><th>Phone</th><th>Address</th><th>Rating</th><th></th></tr></thead><tbody id="archiveBody"></tbody></table>
-          </div>
-        </div>
-      </div>
-
-      <!-- COMMUNITY CHAT VIEW -->
-      <div class="view" id="view-community">
-        <div class="chat-wrap">
-          <div class="chat-header">
-            <div>
-              <div class="ptitle" style="margin-bottom:2px">Community</div>
-              <div style="font-size:12px;color:var(--muted)">Connect with other lead gen professionals</div>
-            </div>
-            <div class="online-pill"><span class="online-dot"></span><span id="onlineCount">0 online</span></div>
-          </div>
-          <div class="topics-bar">
-            <span style="font-size:10px;color:var(--muted);font-family:var(--mono);padding:3px 0;margin-right:4px">TOPICS:</span>
-            <div class="topic-tag" onclick="insertTopic('Sales strategies')">Sales strategies</div>
-            <div class="topic-tag" onclick="insertTopic('Cold outreach tips')">Cold outreach tips</div>
-            <div class="topic-tag" onclick="insertTopic('Best niches to target')">Best niches</div>
-            <div class="topic-tag" onclick="insertTopic('Pricing advice')">Pricing advice</div>
-            <div class="topic-tag" onclick="insertTopic('Tools & automation')">Tools & automation</div>
-            <div class="topic-tag" onclick="insertTopic('Success stories')">Success stories</div>
-          </div>
-          <div class="chat-msgs" id="chatMsgs">
-            <div class="chat-offline" id="chatOffline">
-              <div style="font-size:2rem">💬</div>
-              <div style="font-weight:500;color:var(--text)">Connecting to community…</div>
-              <div>Chat loads when you open this tab</div>
-            </div>
-          </div>
-          <div class="chat-input-wrap">
-            <textarea class="chat-input" id="chatInput" placeholder="Share a strategy, ask a question…" rows="1"
-              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMsg();}"
-              oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea>
-            <button class="btn btn-p" onclick="sendChatMsg()" style="padding:9px 16px;align-self:flex-end">Send</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ACCOUNT SETTINGS VIEW -->
-      <div class="view" id="view-account">
-        <div class="spanel"><div class="ptitle">Account Settings</div></div>
-        <div class="ra">
-          <!-- Usage Stats Card -->
-          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.4rem;margin-bottom:1.4rem;max-width:560px">
-            <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:1rem">Daily Usage</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:1rem">
-              <div style="background:var(--bg4);border-radius:8px;padding:.8rem;text-align:center">
-                <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:4px">USED TODAY</div>
-                <div style="font-family:var(--head);font-size:1.4rem;font-weight:700;color:var(--accent)" id="usageUsed">—</div>
-              </div>
-              <div style="background:var(--bg4);border-radius:8px;padding:.8rem;text-align:center">
-                <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:4px">REMAINING</div>
-                <div style="font-family:var(--head);font-size:1.4rem;font-weight:700;color:var(--green)" id="usageRemaining">—</div>
-              </div>
-              <div style="background:var(--bg4);border-radius:8px;padding:.8rem;text-align:center">
-                <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:4px">DAILY LIMIT</div>
-                <div style="font-family:var(--head);font-size:1.4rem;font-weight:700;color:var(--text)" id="usageLimit">—</div>
-              </div>
-            </div>
-            <div style="background:var(--bg4);border-radius:4px;height:6px;overflow:hidden">
-              <div id="usageBar" style="height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;width:0%;transition:width .5s ease"></div>
-            </div>
-            <div style="font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--mono)" id="usageLabel">Loading usage data…</div>
-          </div>
-
-          <!-- Profile Update Card -->
-          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.4rem;max-width:560px">
-            <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:1rem">Update Profile</div>
-            <div style="background:rgba(242,92,92,0.1);border:1px solid rgba(242,92,92,0.2);border-radius:7px;padding:8px 12px;font-size:12px;color:var(--red);margin-bottom:1rem;display:none" id="profileErr"></div>
-            <div style="background:var(--green-dim);border:1px solid rgba(67,224,160,0.2);border-radius:7px;padding:8px 12px;font-size:12px;color:var(--green);margin-bottom:1rem;display:none" id="profileOk"></div>
-            <div style="margin-bottom:10px">
-              <div style="font-size:10px;color:var(--muted);font-family:var(--mono);letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px">Current Email</div>
-              <div style="font-size:13px;color:var(--text);font-family:var(--mono);padding:8px 10px;background:var(--bg4);border-radius:7px;border:1px solid var(--border)" id="currentEmailDisplay">—</div>
-            </div>
-            <div class="fld" style="margin-bottom:10px"><label>New Email (leave blank to keep current)</label><input type="email" id="newEmail" placeholder="new@email.com" style="max-width:100%"></div>
-            <div class="fld" style="margin-bottom:10px"><label>New Password (leave blank to keep current)</label><input type="password" id="newPassword" placeholder="New password (min 6 chars)" style="max-width:100%"></div>
-            <div class="fld" style="margin-bottom:14px"><label>Current Password (required to save changes)</label><input type="password" id="currentPassword" placeholder="Your current password" style="max-width:100%"></div>
-            <button class="btn btn-p" onclick="saveProfile()" id="saveProfileBtn" style="min-width:140px;justify-content:center">Save Changes</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- UPGRADE VIEW -->
-      <div class="view" id="view-upgrade">
-        <div class="spanel"><div class="ptitle">Upgrade your plan</div></div>
-        <div class="ra"><div id="upgradeContent"></div></div>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<!-- DRAWER -->
-<div class="ov" id="ov" onclick="closeDrawer()"></div>
-<div class="drawer" id="drawer">
-  <div class="dh"><div><div class="dt" id="drT">—</div><div class="ds" id="drS">—</div></div><button class="cls" onclick="closeDrawer()">✕</button></div>
-  <div class="dsec">
-    <div class="dst">CRM Status</div>
-    <select class="crm-select" id="drCrmStatus" onchange="updateCrmStatus()">
-      <option value="new">New</option>
-      <option value="contacted">Contacted</option>
-      <option value="interested">Interested</option>
-      <option value="closed">Closed — Won</option>
-      <option value="lost">Closed — Lost</option>
-    </select>
-  </div>
-  <div class="dsec"><div class="dst">Contact</div><div id="drC"></div></div>
-  <div class="dsec"><div class="dst">Details</div><div id="drD"></div></div>
-  <div class="dsec">
-    <div class="dst">Notes</div>
-    <textarea class="notes" id="drN" placeholder="Add notes, follow-up dates, deal size…"></textarea>
-  </div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <button class="btn btn-g" onclick="saveCurrent()" style="flex:1">💾 Save</button>
-    <button class="btn btn-p" onclick="emailLead()" style="flex:1">📧 Email</button>
-    <button class="btn btn-y" onclick="archiveCurrent()" style="flex:1">🗄 Archive</button>
-    <button class="btn btn-o" onclick="closeDrawer()" style="width:100%;justify-content:center;margin-top:4px">Close</button>
-  </div>
-</div>
-
-<!-- OUTREACH MODAL -->
-<div class="mo" id="outreachMo">
-  <div class="outreach-modal">
-    <div class="mt" style="font-family:var(--head)">Generate Outreach Message</div>
-    <div class="ms" id="outreachBizName">Crafting a personalized cold message…</div>
-    <div id="outreachLoading" style="color:var(--muted);font-size:13px;padding:1rem 0">
-      <span id="outreachDots">Generating</span>
-    </div>
-    <div id="outreachResult" style="display:none">
-      <div class="outreach-result" id="outreachText"></div>
-      <div style="display:flex;gap:8px;margin-top:.9rem">
-        <button class="btn btn-g copy-btn" onclick="copyOutreach()">📋 Copy Message</button>
-        <button class="btn btn-p" onclick="useInComposer()">📧 Open in Composer</button>
-        <button class="btn btn-o" onclick="regenerateOutreach()">↻ Regenerate</button>
-      </div>
-    </div>
-    <div style="display:flex;justify-content:flex-end;margin-top:1rem">
-      <button class="btn btn-o" onclick="closeOutreachMo()">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- EXPORT MODAL -->
-<div class="mo" id="mo">
-  <div class="modal">
-    <div class="mt">Export to CSV</div>
-    <div class="ms" id="exportMs">Download your leads.</div>
-    <div id="exportBody"></div>
-    <div class="mac"><button class="btn btn-o" onclick="closeMo()">Cancel</button><button class="btn btn-p" id="exportBtn" onclick="doExport()">↓ Download</button></div>
-  </div>
-</div>
-
-<div class="toast" id="toast"><div class="tdot s" id="tdot"></div><span id="tmsg"></span></div>
-
-<!-- LOW CREDITS WARNING BANNER -->
-<div id="lowCreditsWarn" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(245,200,66,0.1);border:1px solid rgba(245,200,66,0.3);border-radius:12px;padding:12px 20px;z-index:998;display:none;align-items:center;gap:12px;max-width:480px;backdrop-filter:blur(8px)">
-  <span style="font-size:16px">⚠️</span>
-  <div style="flex:1">
-    <div style="font-size:13px;font-weight:500;color:var(--yellow);font-family:var(--head)">Running low on daily searches</div>
-    <div style="font-size:11.5px;color:var(--muted);margin-top:2px" id="lowCreditsMsg">You have 500 searches remaining today.</div>
-  </div>
-  <button onclick="document.getElementById('lowCreditsWarn').style.display='none'" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px">✕</button>
-</div>
-
-<!-- SEARCH LOADING SPINNER -->
-<div id="searchSpinner" class="search-spinner" style="display:none;position:fixed;inset:0;z-index:150;pointer-events:none;align-items:center;justify-content:center;flex-direction:column;gap:12px">
-  <div class="spinner-globe"></div>
-  <div class="spinner-txt" id="spinnerTxt">Searching for leads…</div>
-</div>
-
-
-
-
 
 <script>
 const G = {
@@ -759,6 +410,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // Load saved/archived from localStorage
   G.saved = JSON.parse(localStorage.getItem('lg_saved')||'[]');
   G.archived = JSON.parse(localStorage.getItem('lg_archived')||'[]');
+  G.archivedIds = new Set(G.archived.map(l=>l.id));
   updateBadges();
   initBulkRows();
   if (G.token && G.user) {
@@ -782,7 +434,12 @@ async function doSignup() {
   try {
     const res=await api('/api/signup','POST',{email,password});
     if(res.error){showErr(err,res.error);return;}
-    setSession(res); showDashboard(); showToast('Welcome to LeadGen Pro!','s');
+    G.token=res.token;
+    G.user={email:res.email,plan:'pending',planLabel:'Choose a plan',limits:{}};
+    localStorage.setItem('lg_token',res.token);
+    localStorage.setItem('lg_user',JSON.stringify(G.user));
+    showPaywall();
+    showToast('Account created — choose a plan to continue','i');
   } catch{showErr(err,'Network error');}
   finally{btn.disabled=false;btn.textContent='Create account';}
 }
@@ -807,9 +464,47 @@ function showErr(el,msg){el.textContent=msg;el.classList.add('on');}
 
 // ── DASHBOARD ──────────────────────────────────────────────────────────────
 function showDashboard() {
+  if(G.user?.plan==='pending'||!G.user?.plan){showPaywall();return;}
   hideAllPages();
   document.getElementById('page-dashboard').style.display='flex';
   updatePlanUI();
+  lockFeaturesByPlan();
+}
+
+function showPaywall() {
+  hideAllPages();
+  document.getElementById('page-paywall').style.display='flex';
+  const hdrRight=document.getElementById('hdrRight');
+  if(hdrRight) hdrRight.innerHTML=`<span style="font-size:12px;color:var(--muted)">${G.user?.email||''}</span><button class="btn btn-d" onclick="doLogout()">Log out</button>`;
+}
+
+
+function lockFeaturesByPlan() {
+  const plan = G.user?.plan || 'basic';
+  // Lock bulk search for basic plan
+  const bulkNav = document.getElementById('nav-bulk');
+  if (bulkNav) {
+    if (plan === 'basic') {
+      bulkNav.style.opacity = '0.4';
+      bulkNav.style.pointerEvents = 'none';
+      bulkNav.title = 'Upgrade to Pro for Bulk Search';
+    } else {
+      bulkNav.style.opacity = '1';
+      bulkNav.style.pointerEvents = 'auto';
+    }
+  }
+  // Lock community for basic plan
+  const commNav = document.getElementById('nav-community');
+  if (commNav) {
+    if (plan === 'basic') {
+      commNav.style.opacity = '0.4';
+      commNav.style.pointerEvents = 'none';
+      commNav.title = 'Upgrade to Pro for Community access';
+    } else {
+      commNav.style.opacity = '1';
+      commNav.style.pointerEvents = 'auto';
+    }
+  }
 }
 
 function updatePlanUI() {
@@ -860,10 +555,10 @@ async function runSearch() {
   try {
     const limit=document.getElementById('searchLimit')?.value||'20';
     const noWebsite=G.filters.noWebsite;
-    const minRev=document.getElementById('minRevenue')?.value||'0';
-    const filterParam=(noWebsite?'&noWebsite=true':'')+(minRev!=='0'?'&minRevenue='+minRev:'');
+    const filterParam=noWebsite?'&noWebsite=true':'';
     const res=await api(`/api/search?q=${encodeURIComponent(q)}&loc=${encodeURIComponent(loc)}&limit=${limit}${filterParam}`,'GET');
     setProg('pfill','ppct','ptxt',100,'Done!');
+    if(res.requiresPayment){pw.classList.remove('on');showPaywall();return;}
     if(res.error){pw.classList.remove('on');showEb(res.error,'eb');return;}
     let leads=res.leads||[];
     if(minR>0) leads=leads.filter(l=>l.rating>=minR);
@@ -977,6 +672,7 @@ function psc(s){return s>=70?'ph':s>=40?'pm':'pl';}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 function renderLeads() {
+  G.leads=G.leads.filter(l=>!G.archivedIds.has(l.id));
   const _filtered=applyFilters(G.leads);
   const filterOn = G.filters.noWebsite;
   const rcText = filterOn
@@ -1084,7 +780,7 @@ const CRM_STAGES=[
 function renderCrm(){
   const kanban=document.getElementById('kanban');
   kanban.innerHTML=CRM_STAGES.map(stage=>{
-    const leads=G.saved.filter(l=>(l.crmStatus||'new')===stage.id);
+    const leads=G.saved.filter(l=>(l.crmStatus||'new')===stage.id&&!G.archivedIds.has(l.id));
     return `
       <div class="kol">
         <div class="kol-hdr" style="color:${stage.color}">${stage.label}<span class="kcount">${leads.length}</span></div>
@@ -1209,7 +905,7 @@ function updateBadges(){document.getElementById('savedBadge').textContent=G.save
 
 // ── VIEWS / PAGES ──────────────────────────────────────────────────────────
 function hideAllPages(){
-  ['landing','pricing','login','signup'].forEach(p=>{const el=document.getElementById('page-'+p);if(el)el.style.display='none';});
+  ['landing','pricing','login','signup','paywall'].forEach(p=>{const el=document.getElementById('page-'+p);if(el)el.style.display='none';});
   document.getElementById('page-dashboard').style.display='none';
 }
 function showPage(name){
