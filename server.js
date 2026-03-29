@@ -32,6 +32,15 @@ users.set('visionaricscaling@gmail.com', {
   createdAt: new Date().toISOString()
 });
 
+// Test account — survives restarts for Stripe testing
+users.set('test@leadgenpro.com', {
+  email: 'test@leadgenpro.com',
+  password: bcrypt.hashSync('Test1234!', 10),
+  plan: 'pending',
+  stripeCustomerId: null,
+  createdAt: new Date().toISOString()
+});
+
 // ── PLANS ──────────────────────────────────────────────────────────────────
 // No free tier — minimum $29/mo required to access the tool
 const PLANS = {
