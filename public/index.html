@@ -698,7 +698,19 @@ window.addEventListener('DOMContentLoaded', () => {
   initBulkRows();
   if (G.token && G.user) {
     showDashboard();
-    if (location.search.includes('upgraded=true')) { refreshUser(); showToast('Plan upgraded!','s'); history.replaceState({},'','/'); }
+    if (location.search.includes('upgraded=true')) {
+      refreshUser();
+      showToast('Welcome to LeadGen Pro! 🎉','s');
+      history.replaceState({},'','/');
+    }
+    if (location.search.includes('cancelled=true')) {
+      // User clicked back from Stripe — send them back to paywall cleanly
+      history.replaceState({},'','/');
+      if (G.user?.plan === 'pending') {
+        showPaywall();
+        showToast('No problem — choose a plan whenever you're ready','i');
+      }
+    }
   } else { showPage('landing'); }
 
   // Enter key search
