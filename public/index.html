@@ -708,7 +708,7 @@ window.addEventListener('DOMContentLoaded', () => {
       history.replaceState({},'','/');
       if (G.user?.plan === 'pending') {
         showPaywall();
-        showToast('No problem — choose a plan whenever you're ready','i');
+        showToast('No problem — choose a plan whenever you are ready','i');
       }
     }
   } else { showPage('landing'); }
@@ -1197,16 +1197,15 @@ function updateBadges(){document.getElementById('savedBadge').textContent=G.save
 
 // ── VIEWS / PAGES ──────────────────────────────────────────────────────────
 function hideAllPages(){
-  ['landing','pricing','login','signup','paywall'].forEach(p=>{const el=document.getElementById('page-'+p);if(el)el.style.display='none';});
-  document.getElementById('page-dashboard').style.display='none';
+  ['landing','pricing','login','signup','paywall','dashboard'].forEach(p=>{const el=document.getElementById('page-'+p);if(el)el.style.display='none';});
 }
 function showPage(name){
   hideAllPages();
   const el=document.getElementById('page-'+name);
-  if(!el){console.warn('Missing page:',name);return;}
+  if(!el){console.warn('Missing page element: page-'+name);showPage('landing');return;}
   el.style.display=['login','signup','pricing','paywall'].includes(name)?'flex':'block';
   const hdrRight=document.getElementById('hdrRight');
-  if(['landing','pricing'].includes(name)) hdrRight.innerHTML=`<button class="btn btn-o" onclick="showPage('login')">Log in</button><button class="btn btn-p" onclick="showPage('signup')">Get started</button>`;
+  if(['landing','pricing'].includes(name)) hdrRight.innerHTML=`<button class="btn btn-o" onclick="showPage('login')">Log in</button><button class="btn btn-p" onclick="showPage('pricing')">View plans</button>`;
   else if(['login','signup'].includes(name)) hdrRight.innerHTML=`<button class="btn btn-o" onclick="showPage('${name==='login'?'signup':'login'}')">${name==='login'?'Sign up':'Log in'}</button>`;
 }
 function showView(name,el){
