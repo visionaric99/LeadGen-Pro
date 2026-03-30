@@ -437,6 +437,100 @@ app.get('/api/subscription', auth, async (req, res) => {
     features: PLANS[user.plan] || {}
   });
 });
+// ── SEARCH ─────────────────────────────────────────────────────────────────
+app.get('/api/search', auth, requirePlan, async (req, res) => {
+  const { q, loc, limit, noWebsite, minRevenue } = req.query;
+  if (!q || !loc) return res.status(400).json({ error: 'Missing search query or location' });
+
+  const user = users.get(req.user.email);
+  if (!user) return res.status(401).json({ error: 'User not found' });
+
+  const isAdmin = ADMIN_EMAILS.includes(user.email);
+  const planLimits = PLANS[user.plan] || PLANS.basic;
+  const targetLimit = Math.min(parseInt(limit) || 20, 100);
+  const filterNoWebsite = noWebsite === 'true';
+
+  // Rate limit
+  if (!checkRateLimit(user.email, 10)) {
+    return res.status(429).json({ error: 'Too many searches — wait a minute and try again' });
+  }
+
+  // Daily lead cap
+  const dailyLeadLimit = isAdmin ? 999999 : (planLimits.dailyLeads || 100);
+  const leadsUsedToday = getDailyLeadsUsed(user.email);
+  if (!isAdmin && leadsUsedToday >= dailyLeadLimit) {
+    return res.status(429).json({
+      error: `Daily lead limit reached (${dailyLeadLimit} leads/day on ${planLimits.label} plan). Resets at midnight.`,
+      limitReached: true
+    });
+  }
+
+  // Cache
+  const cacheKey = `${q.toLowerCase().trim()}:${loc.toLowerCase().trim()}:${targetLimit}:${filterNoWebsite}`;
+  const cached = getCached(cacheKey);
+  if (cached) {
+    let filteredCached = cached;
+    if (minRevenue && parseInt(minRevenue) > 0) {
+      filteredCached = cached.filter(l => (l.estRevenue || 10000) >= parseInt(minRevenue));
+    }
+    return res.json({ leads: filteredCached, errors: [], total: filteredCached.length, plan: user.plan, exportLimit: planLimits.exports, cached: true });
+  }
+
+  const errors = [];
+  let leads = [];
+  const seen = new Set();
+  console.log(`[SEARCH] q="${q}" loc="${loc}" limit=${targetLimit} noWebsite=${filterNoWebsite} user=${user.email}`);
+
+  try {
+    if (filterNoWebsite) {
+      let offset = 0, apiCalls = 0;
+      while (leads.length < targetLimit && apiCalls < 8) {
+        const batch = await searchGoogle(q, loc, 20, offset);
+        apiCalls++;
+        if (!batch.length) break;
+        for (const b of batch) {
+          const key = (b.name + b.city).toLowerCase().replace(/\s/g, '');
+          if (seen.has(key)) continue;
+          seen.add(key);
+          if (!b.website || !b.website.trim()) {
+            leads.push(b);
+            if (leads.length >= targetLimit) break;
+          }
+        }
+        offset += 20;
+        if (batch.length < 20) break;
+      }
+      console.log(`[SEARCH] ${leads.length} no-website results in ${apiCalls} API calls`);
+    } else {
+      const batch = await searchGoogle(q, loc, targetLimit, 0);
+      for (const b of batch) {
+        const key = (b.name + b.city).toLowerCase().replace(/\s/g, '');
+        if (!seen.has(key)) { seen.add(key); leads.push(b); }
+      }
+    }
+  } catch(e) {
+    errors.push(e.message);
+    console.error('[SEARCH ERROR]', e.message);
+  }
+
+  if (!leads.length && errors.length) {
+    return res.json({ leads: [], errors, total: 0, plan: user.plan, exportLimit: planLimits.exports, debug: errors.join(' | ') });
+  }
+
+  setCache(cacheKey, leads);
+
+  // Track leads toward daily cap
+  if (!isAdmin) addDailyLeads(user.email, leads.length);
+
+  // Apply revenue filter
+  let finalLeads = leads;
+  if (minRevenue && parseInt(minRevenue) > 0) {
+    finalLeads = leads.filter(l => (l.estRevenue || 10000) >= parseInt(minRevenue));
+  }
+
+  res.json({ leads: finalLeads, errors, total: finalLeads.length, plan: user.plan, exportLimit: planLimits.exports, filtered: filterNoWebsite });
+});
+
 // ── HEALTH ─────────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
