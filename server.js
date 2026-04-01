@@ -299,10 +299,29 @@ app.get('/api/usage', auth, (req, res) => {
   const isAdmin = ADMIN_EMAILS.includes(user.email);
   const plan = PLANS[user.plan];
   if (!plan) return res.json({ used: 0, limit: 0, remaining: 0, plan: user.plan, planLabel: 'No plan', requiresPayment: true });
+
+  // Daily stats
   const used = isAdmin ? 0 : getDailyLeadsUsed(user.email);
   const limit = isAdmin ? 999999 : (plan.dailyLeads || 100);
   const remaining = isAdmin ? 999999 : Math.max(0, limit - used);
-  res.json({ used, limit, remaining, plan: user.plan, planLabel: plan.label, features: plan });
+
+  // Monthly stats — sum all daily counts for current month
+  const now = new Date();
+  const monthPrefix = user.email + ':leads:' + now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  let monthlyUsed = 0;
+  if (!isAdmin) {
+    dailyCounts.forEach((val, key) => {
+      if (key.startsWith(monthPrefix)) monthlyUsed += val;
+    });
+  }
+
+  res.json({
+    used, limit, remaining,
+    monthlyUsed: isAdmin ? 0 : monthlyUsed,
+    monthlyLimit: isAdmin ? 999999 : (plan.dailyLeads || 100) * 30,
+    plan: user.plan, planLabel: plan.label, features: plan,
+    resetTime: 'midnight'
+  });
 });
 
 // ── STRIPE ─────────────────────────────────────────────────────────────────
