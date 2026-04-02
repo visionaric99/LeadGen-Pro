@@ -47,16 +47,19 @@ const PLANS = {
   basic:  {
     exports: 999999, searchLimit: 100, dailyLeads: 100,
     bulkSearch: false, community: false, prioritySupport: false,
-    label: 'Basic', price: 29
+    aiOutreach: false, websiteQuality: false,
+    label: 'Starter', price: 29
   },
   pro:    {
     exports: 999999, searchLimit: 100, dailyLeads: 500,
     bulkSearch: true, community: true, prioritySupport: true,
+    aiOutreach: true, websiteQuality: false,
     label: 'Pro', price: 79
   },
   agency: {
     exports: 999999, searchLimit: 100, dailyLeads: 1000,
     bulkSearch: true, community: true, prioritySupport: true,
+    aiOutreach: true, websiteQuality: true,
     label: 'Agency', price: 199
   }
 };
@@ -230,8 +233,30 @@ async function searchGoogle(query, location, limit, offset=0) {
     hours: b.working_hours_old_format || '', source: 'Google Maps',
     score: calcScore(b.rating, b.reviews),
     estRevenue: estimateRevenue(b.name, b.type || b.subtypes?.[0], b.rating, b.reviews, !!(b.website)),
+    websiteQuality: scoreWebsite(b.website, b.rating, b.reviews),
     notes: ''
   }));
+}
+
+// ── WEBSITE QUALITY SCORER ─────────────────────────────────────────────────
+function scoreWebsite(url, rating, reviews) {
+  if (!url || !url.trim()) return null; // no website
+  const u = url.toLowerCase();
+  // Bad signals
+  const isBad = (
+    u.includes('wix.com') || u.includes('weebly.com') ||
+    u.includes('godaddy.com/website') || u.includes('yolasite.com') ||
+    u.includes('wordpress.com') || u.includes('blogspot') ||
+    u.includes('squarespace.com/s/') || !u.includes('.')
+  );
+  if (isBad) return 'bad';
+  // Good signals — established domain with good reviews
+  const hasGoodRating = (rating || 0) >= 4.0;
+  const hasGoodReviews = (reviews || 0) >= 50;
+  const hasCleanDomain = !u.includes('wix') && !u.includes('weebly') && !u.includes('godaddy');
+  const score = (hasGoodRating ? 1 : 0) + (hasGoodReviews ? 1 : 0) + (hasCleanDomain ? 1 : 0);
+  if (score >= 2) return 'good';
+  return 'mid';
 }
 
 // ── AUTH ROUTES ────────────────────────────────────────────────────────────
