@@ -203,6 +203,11 @@ td.lk a{color:inherit;text-decoration:none}td.lk a:hover{text-decoration:underli
 /* HIGH OPPORTUNITY BADGE */
 .ho-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(245,200,66,0.12);color:var(--yellow);border:1px solid rgba(245,200,66,0.25);border-radius:999px;padding:2px 8px;font-size:10px;font-family:var(--mono);font-weight:500;white-space:nowrap}
 .ho-badge::before{content:'★';font-size:9px}
+.wq-badge{display:inline-flex;align-items:center;gap:3px;border-radius:999px;padding:2px 7px;font-size:10px;font-family:var(--mono);font-weight:500;white-space:nowrap;margin-left:3px}
+.wq-good{background:rgba(67,224,160,0.12);color:var(--green);border:1px solid rgba(67,224,160,0.22)}
+.wq-mid{background:rgba(245,148,74,0.12);color:var(--orange);border:1px solid rgba(245,148,74,0.22)}
+.wq-bad{background:rgba(242,92,92,0.12);color:var(--red);border:1px solid rgba(242,92,92,0.22)}
+.upgrade-tag{font-size:9px;background:rgba(79,142,247,0.15);color:var(--accent);border-radius:999px;padding:1px 7px;font-family:var(--mono);margin-left:4px;cursor:pointer;border:none;background:var(--accent-dim)}
 tbody tr.high-opp{border-left:2px solid var(--yellow)}
 
 /* OUTREACH MODAL */
@@ -309,36 +314,25 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
     <div class="pricing-sub">No free tier. Every plan includes full access — cancel anytime.</div>
     <div class="pricing-grid">
       <div class="price-card">
-        <div class="price-name">Basic</div>
+        <div class="price-name">Starter</div>
         <div class="price-amount">$29<span>/mo</span></div>
-        <div class="price-desc">For freelancers getting started</div>
-        <ul class="price-features">
-          <li>100 leads generated per day</li><li>Google Maps live data</li>
-          <li>Revenue estimator badges</li><li>CRM pipeline</li>
-          <li>Email outreach composer</li><li>CSV export</li>
-        </ul>
+        <div class="price-desc">For freelancers getting started with lead gen</div>
+        <ul class="price-features"><li>100 new leads daily</li><li>Google Maps live data</li><li>Revenue estimator badges</li><li>CRM pipeline</li><li>Email outreach composer</li><li>CSV export</li></ul>
         <button class="btn btn-o" style="width:100%" onclick="showPage('signup')">Get started →</button>
       </div>
       <div class="price-card popular">
         <div class="popular-badge">Most popular</div>
         <div class="price-name">Pro</div>
         <div class="price-amount">$79<span>/mo</span></div>
-        <div class="price-desc">For agencies running campaigns</div>
-        <ul class="price-features">
-          <li>500 leads generated per day</li><li>Everything in Basic</li>
-          <li>Bulk search (multiple cities)</li><li>Community chat</li>
-          <li>Priority support</li>
-        </ul>
+        <div class="price-desc">For agencies running smarter campaigns</div>
+        <ul class="price-features"><li>500 leads generated per day</li><li>Everything in Starter</li><li>Upgraded AI email outreach</li><li>AI appointment-setting outreach</li><li>Bulk search (multiple cities)</li><li>Community chat</li><li>Priority support</li></ul>
         <button class="btn btn-p" style="width:100%" onclick="showPage('signup')">Get started →</button>
       </div>
       <div class="price-card">
         <div class="price-name">Agency</div>
         <div class="price-amount">$199<span>/mo</span></div>
-        <div class="price-desc">For high-volume teams</div>
-        <ul class="price-features">
-          <li>1,000 leads generated per day</li><li>Everything in Pro</li>
-          <li>Bulk search across any city</li><li>Dedicated support</li>
-        </ul>
+        <div class="price-desc">For high-volume teams and power users</div>
+        <ul class="price-features"><li>1,000 leads generated per day</li><li>Everything in Pro</li><li>Website quality badges on listings</li><li>Website quality search filters</li><li>Bulk search across any city</li><li>Unlimited CSV exports</li><li>Dedicated support</li></ul>
         <button class="btn btn-o" style="width:100%" onclick="showPage('signup')">Get started →</button>
       </div>
     </div>
@@ -384,22 +378,22 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
       <div class="auth-sub" style="text-align:center;margin-bottom:2rem">Your account is ready. Subscribe to start generating leads.</div>
       <div class="pricing-grid" style="margin-bottom:1.5rem">
         <div class="price-card">
-          <div class="price-name">Basic</div>
+          <div class="price-name">Starter</div>
           <div class="price-amount">$29<span>/mo</span></div>
-          <ul class="price-features"><li>100 leads generated per day</li><li>Google Maps live data</li><li>Revenue estimator badges</li><li>CRM pipeline</li><li>Email outreach composer</li><li>CSV export</li></ul>
+          <ul class="price-features"><li>100 new leads daily</li><li>Google Maps live data</li><li>Revenue estimator badges</li><li>CRM pipeline</li><li>Email outreach composer</li><li>CSV export</li></ul>
           <button class="btn btn-o" style="width:100%" onclick="startCheckout('basic')">Subscribe →</button>
         </div>
         <div class="price-card popular">
           <div class="popular-badge">Most popular</div>
           <div class="price-name">Pro</div>
           <div class="price-amount">$79<span>/mo</span></div>
-          <ul class="price-features"><li>500 leads generated per day</li><li>Everything in Basic</li><li>Bulk search (multiple cities)</li><li>Community chat access</li><li>Priority support</li></ul>
+          <ul class="price-features"><li>500 leads generated per day</li><li>Everything in Starter</li><li>Upgraded AI email outreach</li><li>AI appointment-setting outreach</li><li>Bulk search (multiple cities)</li><li>Community chat</li><li>Priority support</li></ul>
           <button class="btn btn-p" style="width:100%" onclick="startCheckout('pro')">Subscribe →</button>
         </div>
         <div class="price-card">
           <div class="price-name">Agency</div>
           <div class="price-amount">$199<span>/mo</span></div>
-          <ul class="price-features"><li>1,000 leads generated per day</li><li>Everything in Pro</li><li>Bulk search across any city</li><li>Unlimited CSV exports</li><li>Dedicated support</li></ul>
+          <ul class="price-features"><li>1,000 leads generated per day</li><li>Everything in Pro</li><li>Website quality badges</li><li>Website quality filters</li><li>Bulk search across any city</li><li>Unlimited CSV exports</li><li>Dedicated support</li></ul>
           <button class="btn btn-o" style="width:100%" onclick="startCheckout('agency')">Subscribe →</button>
         </div>
       </div>
@@ -454,6 +448,16 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
               </div>
               Search only businesses <strong style="color:var(--text);margin-left:3px">without a website</strong>
               <span style="font-size:10px;background:rgba(79,142,247,0.15);color:var(--accent);border-radius:999px;padding:1px 7px;font-family:var(--mono)">pre-search filter</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-size:12.5px;color:var(--muted)" id="wqFilterWrap">
+              <span style="font-size:11px;color:var(--muted)">Website quality:</span>
+              <select id="wqFilter" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;padding:3px 8px;font-family:var(--mono);outline:none">
+                <option value="">Any</option>
+                <option value="good">Good ✓</option>
+                <option value="mid">Mid ◎</option>
+                <option value="bad">Bad ✕</option>
+              </select>
+              <span id="wqLockTag" style="display:none;font-size:9px;background:var(--accent-dim);color:var(--accent);border-radius:999px;padding:1px 7px;font-family:var(--mono);cursor:pointer" onclick="showView('upgrade',document.getElementById('nav-upgrade'))">Agency only ↗</span>
             </label>
           </div>
         </div>
@@ -524,8 +528,16 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
 
       <!-- OUTREACH -->
       <div class="view" id="view-outreach">
-        <div class="spanel"><div class="ptitle">Email Outreach</div></div>
-        <div class="outreach-grid">
+        <div class="spanel" style="padding-bottom:.8rem">
+          <div class="ptitle" style="margin-bottom:.4rem">Email Outreach</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-o" id="outTab1" onclick="switchOutTab('compose')" style="font-size:11px;padding:4px 12px;border-color:var(--accent);color:var(--accent)">✏ Compose</button>
+            <button class="btn btn-o" id="outTab2" onclick="switchOutTab('ai')" style="font-size:11px;padding:4px 12px">✨ AI Generate</button>
+          </div>
+        </div>
+
+        <!-- COMPOSE PANEL -->
+        <div id="outPanelCompose" class="outreach-grid">
           <div>
             <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.9rem">Compose Email</div>
             <div class="fld" style="margin-bottom:8px"><label>To</label><input id="outTo" type="email" placeholder="contact@business.com"></div>
@@ -545,7 +557,62 @@ I build fast, affordable websites for local businesses that turn searchers into 
 Worth a quick 10-min call?
 
 [Your Name]</div></div>
+              <div class="ocard"><div style="font-weight:500;font-size:.9rem;margin-bottom:.3rem">Local SEO offer</div><div class="template-body" onclick="useTemplate(this)">Hi [Name],
+
+I help [niche] businesses in [city] get found on Google by people actively searching for their services.
+
+I noticed [Business] might have room to grow online — I have a few quick ideas specific to your market.
+
+Would you be open to a 10-min call this week?
+
+[Your Name]</div></div>
             </div>
+          </div>
+        </div>
+
+        <!-- AI GENERATE PANEL -->
+        <div id="outPanelAI" style="display:none;flex:1;flex-direction:column;overflow-y:auto;padding:1.2rem 1.5rem">
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1rem 1.2rem;margin-bottom:1rem">
+            <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.8rem">Generate AI Email</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+              <div class="fld"><label>Business name</label><input id="aiName" type="text" placeholder="Auto-filled from lead…"></div>
+              <div class="fld"><label>Niche / Category</label><input id="aiNiche" type="text" placeholder="e.g. Dentist, Plumber…"></div>
+              <div class="fld"><label>City</label><input id="aiCity" type="text" placeholder="Miami FL…"></div>
+              <div class="fld"><label>Has website?</label>
+                <select id="aiHasWeb" style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;padding:7px 10px;outline:none">
+                  <option value="no">No website</option>
+                  <option value="yes">Has website</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-bottom:8px">
+              <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">CTA Style</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap" id="ctaButtons">
+                <button class="btn btn-o" id="cta-call" onclick="selectCTA('call')" style="font-size:11px;padding:4px 12px;border-color:var(--accent);color:var(--accent)">📞 Book a Call</button>
+                <button class="btn btn-o" id="cta-demo" onclick="selectCTA('demo')" style="font-size:11px;padding:4px 12px">🖥 Free Demo</button>
+                <button class="btn btn-o" id="cta-question" onclick="selectCTA('question')" style="font-size:11px;padding:4px 12px">💬 Quick Question</button>
+              </div>
+            </div>
+            <div id="aiProWrap" style="display:none;margin-bottom:8px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--muted)">
+                <input type="checkbox" id="aiApptMode" style="accent-color:var(--accent)">
+                <span>Appointment-setting angle <span style="font-size:10px;color:var(--accent);font-family:var(--mono)">(Pro+)</span></span>
+              </label>
+            </div>
+            <button class="btn btn-p" onclick="generateAIOutreach()" id="aiGenBtn" style="width:100%;justify-content:center;margin-top:4px">✨ Generate Variations</button>
+          </div>
+
+          <!-- Locked message for starter plan -->
+          <div id="aiLockedMsg" style="display:none;background:var(--accent-dim);border:1px solid rgba(79,142,247,0.2);border-radius:10px;padding:1.2rem;text-align:center;margin-bottom:1rem">
+            <div style="font-family:var(--head);font-size:.9rem;font-weight:700;margin-bottom:.4rem">AI Outreach — Pro Feature</div>
+            <div style="font-size:12.5px;color:var(--muted);margin-bottom:1rem">Upgrade to Pro to unlock AI-personalized email generation, appointment-setting copy, and multiple variations.</div>
+            <button class="btn btn-p" onclick="showView('upgrade',document.getElementById('nav-upgrade'))">Upgrade to Pro →</button>
+          </div>
+
+          <!-- AI Results -->
+          <div id="aiResults" style="display:none">
+            <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.8rem">Generated Variations</div>
+            <div id="aiVariations" style="display:flex;flex-direction:column;gap:10px"></div>
           </div>
         </div>
       </div>
@@ -771,17 +838,7 @@ function showPaywall() {
   if(hdrRight) hdrRight.innerHTML=`<span style="font-size:12px;color:var(--muted)">${G.user?.email||''}</span><button class="btn btn-d" onclick="doLogout()" style="font-size:12px">Log out</button>`;
 }
 
-function lockFeaturesByPlan() {
-  const plan = G.user?.plan||'basic';
-  ['nav-bulk','nav-community'].forEach(id => {
-    const el = document.getElementById(id);
-    if(!el) return;
-    const locked = plan==='basic';
-    el.style.opacity = locked?'0.4':'1';
-    el.style.pointerEvents = locked?'none':'auto';
-    el.title = locked?'Upgrade to Pro to unlock this feature':'';
-  });
-}
+// lockFeaturesByPlan defined below
 
 function showDashboard() {
   if(G.user?.plan==='pending'||!G.user?.plan){showPaywall();return;}
@@ -800,9 +857,9 @@ function updatePlanUI() {
 function renderUpgradeView() {
   const plan=G.user?.plan||'basic';
   const plans=[
-    {id:'basic',name:'Basic',price:29,features:['100 leads generated per day','Google Maps live data','Revenue estimator badges','CRM pipeline','Email outreach composer','CSV export']},
-    {id:'pro',name:'Pro',price:79,features:['500 leads generated per day','Everything in Basic','Bulk search (multiple cities)','Community chat access','Priority support']},
-    {id:'agency',name:'Agency',price:199,features:['1,000 leads generated per day','Everything in Pro','Bulk search across any city','Unlimited CSV exports','Dedicated support']}
+    {id:'basic',name:'Starter',price:29,features:['100 new leads daily','Google Maps live data','Revenue estimator badges','CRM pipeline','Email outreach composer','CSV export']},
+    {id:'pro',name:'Pro',price:79,features:['500 leads generated per day','Everything in Starter','Upgraded AI email outreach','AI appointment-setting outreach','Bulk search (multiple cities)','Community chat','Priority support']},
+    {id:'agency',name:'Agency',price:199,features:['1,000 leads generated per day','Everything in Pro','Website quality badges on listings','Website quality search filters','Bulk search across any city','Unlimited CSV exports','Dedicated support']}
   ];
   document.getElementById('upgradeContent').innerHTML=`
     <p style="color:var(--muted);font-size:13px;margin-bottom:1.5rem">Current plan: <strong style="color:var(--text)">${G.user?.planLabel}</strong></p>
@@ -962,7 +1019,11 @@ function toggleFilter(name){
 function applyFilters(leads){
   let out=leads;
   // noWebsite filtering handled server-side when toggle is ON before search
-  // noPhone filter removed
+  // Website quality filter (agency only)
+  const wqFilter = document.getElementById('wqFilter')?.value;
+  if (wqFilter && G.user?.plan === 'agency') {
+    out = out.filter(l => l.websiteQuality === wqFilter);
+  }
   return out;
 }
 function psc(s){return s>=70?'ph':s>=40?'pm':'pl';}
@@ -979,7 +1040,11 @@ function renderLeads() {
   document.getElementById('lb').innerHTML=_filtered.map(l=>`
     <tr class="${G.sel.has(l.id)?'sel':''} ${!l.website?'high-opp':''}" onclick="openD('${esc(l.id)}','main')">
       <td onclick="event.stopPropagation()"><input type="checkbox" ${G.sel.has(l.id)?'checked':''} style="accent-color:var(--accent);cursor:pointer" onchange="toggleSel('${esc(l.id)}',this)"></td>
-      <td class="nm">${esc(l.name)}${!l.website?' <span class=\"ho-badge\">High Opportunity</span>':''}</td>
+      <td class="nm">
+        ${esc(l.name)}
+        ${!l.website?'<span class=\"ho-badge\">High Opportunity</span>':''}
+        ${G.user?.plan==='agency'&&l.websiteQuality?`<span class=\"wq-badge wq-${l.websiteQuality}\">${l.websiteQuality==='good'?'✓ Good':l.websiteQuality==='mid'?'◎ Mid':'✕ Bad'}</span>`:''}
+      </td>
       <td class="mu">${esc(l.cat)}</td>
       <td class="mu">${esc(l.phone)||'—'}</td>
       <td class="${l.website?'lk':'mu'}">${l.website?`<a href="${esc(l.website)}" target="_blank" onclick="event.stopPropagation()">${esc(l.website.replace(/^https?:\/\//,'').slice(0,22))}</a>`:'<span style="color:var(--muted);font-size:11px">No website</span>'}</td>
@@ -1520,6 +1585,194 @@ async function checkCreditsAfterSearch() {
       warn.style.display = 'flex';
     }
   } catch(e) {}
+}
+
+// ── OUTREACH TAB SWITCHER ─────────────────────────────────────────────────
+let selectedCTA = 'call';
+
+function switchOutTab(tab) {
+  const compose = document.getElementById('outPanelCompose');
+  const ai = document.getElementById('outPanelAI');
+  const t1 = document.getElementById('outTab1');
+  const t2 = document.getElementById('outTab2');
+  if (tab === 'compose') {
+    compose.style.display = 'grid';
+    ai.style.display = 'none';
+    t1.style.borderColor = 'var(--accent)'; t1.style.color = 'var(--accent)';
+    t2.style.borderColor = ''; t2.style.color = '';
+  } else {
+    compose.style.display = 'none';
+    ai.style.display = 'flex';
+    t2.style.borderColor = 'var(--accent)'; t2.style.color = 'var(--accent)';
+    t1.style.borderColor = ''; t1.style.color = '';
+    // Show lock or unlock based on plan
+    const isPro = ['pro','agency'].includes(G.user?.plan);
+    document.getElementById('aiLockedMsg').style.display = isPro ? 'none' : 'block';
+    document.getElementById('aiGenBtn').style.display = isPro ? 'flex' : 'none';
+    document.getElementById('aiProWrap').style.display = isPro ? 'block' : 'none';
+    // Pre-fill from last viewed lead
+    if (G.cur) {
+      document.getElementById('aiName').value = G.cur.name || '';
+      document.getElementById('aiNiche').value = G.cur.cat || '';
+      document.getElementById('aiCity').value = G.cur.city || '';
+      document.getElementById('aiHasWeb').value = G.cur.website ? 'yes' : 'no';
+    }
+  }
+}
+
+function selectCTA(cta) {
+  selectedCTA = cta;
+  ['call','demo','question'].forEach(c => {
+    const btn = document.getElementById('cta-' + c);
+    if (!btn) return;
+    btn.style.borderColor = c === cta ? 'var(--accent)' : '';
+    btn.style.color = c === cta ? 'var(--accent)' : '';
+  });
+}
+
+function generateAIOutreach() {
+  const name = document.getElementById('aiName').value.trim() || '[Business]';
+  const niche = document.getElementById('aiNiche').value.trim() || 'local business';
+  const city = document.getElementById('aiCity').value.trim() || 'your city';
+  const hasWeb = document.getElementById('aiHasWeb').value === 'yes';
+  const apptMode = document.getElementById('aiApptMode')?.checked;
+  const cta = selectedCTA;
+
+  const ctaLines = {
+    call: "Would you be open to a quick 10-minute call this week?",
+    demo: "I'd love to show you a free demo — would that be worth 15 minutes of your time?",
+    question: "Quick question — would you be open to hearing one idea I have for your business?"
+  };
+
+  const apptLine = apptMode
+    ? `
+
+I use a simple online booking link so you can pick a time that works — no back and forth needed.`
+    : '';
+
+  const variations = hasWeb ? [
+    `Hi ${name} team,
+
+I came across your business in ${city} while researching ${niche} companies in the area.
+
+I work with ${niche} businesses to help them generate more leads and grow their online presence — and I have a few specific ideas for ${name} that I think could make a real difference.
+
+${ctaLines[cta]}${apptLine}
+
+[Your Name]`,
+    `Hello,
+
+I specialize in helping ${niche} businesses in ${city} attract more customers through smarter digital marketing.
+
+I've been looking at businesses like ${name} and spotted a few opportunities worth a quick conversation.
+
+${ctaLines[cta]}${apptLine}
+
+[Your Name]`,
+    `Hi there,
+
+I noticed ${name} has been building a solid reputation in ${city} — impressive work.
+
+I help ${niche} businesses like yours turn that reputation into a steady stream of new clients online.
+
+${ctaLines[cta]}${apptLine}
+
+[Your Name]`
+  ] : [
+    `Hi ${name} team,
+
+I was searching for ${niche} services in ${city} and noticed you don't have a website yet — which honestly surprised me given how strong your reputation looks.
+
+Businesses like yours are leaving a lot of potential customers on the table who search online first.
+
+${ctaLines[cta]}${apptLine}
+
+[Your Name]`,
+    `Hello,
+
+I came across ${name} while researching ${niche} businesses in ${city}. You've clearly built something people love — but without a website, you're missing out on the 70%+ of customers who search before they buy.
+
+I help local businesses get online fast and start seeing results quickly.
+
+${ctaLines[cta]}${apptLine}
+
+[Your Name]`,
+    `Hi there,
+
+Quick note — I build websites for ${niche} businesses in ${city} that actually generate customers, not just look good.
+
+${name} came up in my research and I think there's a real opportunity here.
+
+${ctaLines[cta]}${apptLine}
+
+[Your Name]`
+  ];
+
+  const container = document.getElementById('aiVariations');
+  container.innerHTML = variations.map((v, i) => `
+    <div class="ocard" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem">
+        <div style="font-size:11px;font-family:var(--mono);color:var(--muted)">Variation ${i+1}</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-g" style="padding:3px 9px;font-size:10px" onclick="loadVariation(${i})">Use this</button>
+          <button class="btn btn-o" style="padding:3px 9px;font-size:10px" onclick="copyVariation(${i})">Copy</button>
+        </div>
+      </div>
+      <div class="template-body" id="aiVar${i}" style="white-space:pre-wrap;font-size:12px;line-height:1.7">${esc(v)}</div>
+    </div>`).join('');
+
+  document.getElementById('aiResults').style.display = 'block';
+  window._aiVariations = variations;
+}
+
+function loadVariation(i) {
+  const v = window._aiVariations?.[i];
+  if (!v) return;
+  switchOutTab('compose');
+  document.getElementById('outBody').value = v;
+  const name = document.getElementById('aiName').value;
+  document.getElementById('outSubject').value = name ? `Quick note for ${name}` : 'Quick question';
+  showToast('Variation loaded into composer','s');
+}
+
+function copyVariation(i) {
+  const v = window._aiVariations?.[i];
+  if (!v) return;
+  navigator.clipboard.writeText(v).then(() => showToast('Copied!','s'));
+}
+
+// ── PLAN FEATURE LOCKING ───────────────────────────────────────────────────
+function lockFeaturesByPlan() {
+  const plan = G.user?.plan || 'basic';
+  // Bulk search — Pro+
+  const bulkNav = document.getElementById('nav-bulk');
+  if (bulkNav) {
+    const locked = plan === 'basic';
+    bulkNav.style.opacity = locked ? '0.4' : '1';
+    bulkNav.style.pointerEvents = locked ? 'none' : 'auto';
+    bulkNav.title = locked ? 'Upgrade to Pro for Bulk Search' : '';
+  }
+  // Community — Pro+
+  const commNav = document.getElementById('nav-community');
+  if (commNav) {
+    const locked = plan === 'basic';
+    commNav.style.opacity = locked ? '0.4' : '1';
+    commNav.style.pointerEvents = locked ? 'none' : 'auto';
+    commNav.title = locked ? 'Upgrade to Pro for Community' : '';
+  }
+  // Website quality filter — Agency only
+  const wqWrap = document.getElementById('wqFilterWrap');
+  const wqLock = document.getElementById('wqLockTag');
+  const wqSel = document.getElementById('wqFilter');
+  if (wqWrap) {
+    if (plan !== 'agency') {
+      if (wqSel) { wqSel.disabled = true; wqSel.style.opacity = '0.4'; }
+      if (wqLock) wqLock.style.display = 'inline';
+    } else {
+      if (wqSel) { wqSel.disabled = false; wqSel.style.opacity = '1'; }
+      if (wqLock) wqLock.style.display = 'none';
+    }
+  }
 }
 
 let tt;
