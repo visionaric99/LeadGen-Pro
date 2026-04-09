@@ -1,0 +1,187 @@
+// ── OUTREACH TAB SWITCHER ─────────────────────────────────────────────────
+let selectedCTA = 'call';
+
+function switchOutTab(tab) {
+  const compose = document.getElementById('outPanelCompose');
+  const ai = document.getElementById('outPanelAI');
+  const t1 = document.getElementById('outTab1');
+  const t2 = document.getElementById('outTab2');
+  if (tab === 'compose') {
+    compose.style.display = 'grid';
+    ai.style.display = 'none';
+    t1.style.borderColor = 'var(--accent)'; t1.style.color = 'var(--accent)';
+    t2.style.borderColor = ''; t2.style.color = '';
+  } else {
+    compose.style.display = 'none';
+    ai.style.display = 'flex';
+    t2.style.borderColor = 'var(--accent)'; t2.style.color = 'var(--accent)';
+    t1.style.borderColor = ''; t1.style.color = '';
+    // Show lock or unlock based on plan
+    const isPro = ['pro','agency'].includes(G.user?.plan);
+    document.getElementById('aiLockedMsg').style.display = isPro ? 'none' : 'block';
+    document.getElementById('aiGenBtn').style.display = isPro ? 'flex' : 'none';
+    document.getElementById('aiProWrap').style.display = isPro ? 'block' : 'none';
+    // Pre-fill from last viewed lead
+    if (G.cur) {
+      document.getElementById('aiName').value = G.cur.name || '';
+      document.getElementById('aiNiche').value = G.cur.cat || '';
+      document.getElementById('aiCity').value = G.cur.city || '';
+      document.getElementById('aiHasWeb').value = G.cur.website ? 'yes' : 'no';
+    }
+  }
+}
+
+function selectCTA(cta) {
+  selectedCTA = cta;
+  ['call','demo','question'].forEach(c => {
+    const btn = document.getElementById('cta-' + c);
+    if (!btn) return;
+    btn.style.borderColor = c === cta ? 'var(--accent)' : '';
+    btn.style.color = c === cta ? 'var(--accent)' : '';
+  });
+}
+
+function generateAIOutreach() {
+  const name = document.getElementById('aiName').value.trim() || '[Business]';
+  const niche = document.getElementById('aiNiche').value.trim() || 'local business';
+  const city = document.getElementById('aiCity').value.trim() || 'your city';
+  const hasWeb = document.getElementById('aiHasWeb').value === 'yes';
+  const apptMode = document.getElementById('aiApptMode')?.checked;
+  const cta = selectedCTA;
+
+  const ctaLines = {
+    call: "Would you be open to a quick 10-minute call this week?",
+    demo: "I'd love to show you a free demo — would that be worth 15 minutes of your time?",
+    question: "Quick question — would you be open to hearing one idea I have for your business?"
+  };
+
+  const apptLine = apptMode
+    ? `
+
+I use a simple online booking link so you can pick a time that works — no back and forth needed.`
+    : '';
+
+  const variations = hasWeb ? [
+    `Hi ${name} team,
+
+I came across your business in ${city} while researching ${niche} companies in the area.
+
+I work with ${niche} businesses to help them generate more leads and grow their online presence — and I have a few specific ideas for ${name} that I think could make a real difference.
+
+${ctaLines[cta]}${apptLine}
+
+[Your Name]`,
+    `Hello,
+
+I specialize in helping ${niche} businesses in ${city} attract more customers through smarter digital marketing.
+
+I've been looking at businesses like ${name} and spotted a few opportunities worth a quick conversation.
+
+${ctaLines[cta]}${apptLine}
+
+[Your Name]`,
+    `Hi there,
+
+I noticed ${name} has been building a solid reputation in ${city} — impressive work.
+
+I help ${niche} businesses like yours turn that reputation into a steady stream of new clients online.
+
+${ctaLines[cta]}${apptLine}
+
+[Your Name]`
+  ] : [
+    `Hi ${name} team,
+
+I was searching for ${niche} services in ${city} and noticed you don't have a website yet — which honestly surprised me given how strong your reputation looks.
+
+Businesses like yours are leaving a lot of potential customers on the table who search online first.
+
+${ctaLines[cta]}${apptLine}
+
+[Your Name]`,
+    `Hello,
+
+I came across ${name} while researching ${niche} businesses in ${city}. You've clearly built something people love — but without a website, you're missing out on the 70%+ of customers who search before they buy.
+
+I help local businesses get online fast and start seeing results quickly.
+
+${ctaLines[cta]}${apptLine}
+
+[Your Name]`,
+    `Hi there,
+
+Quick note — I build websites for ${niche} businesses in ${city} that actually generate customers, not just look good.
+
+${name} came up in my research and I think there's a real opportunity here.
+
+${ctaLines[cta]}${apptLine}
+
+[Your Name]`
+  ];
+
+  const container = document.getElementById('aiVariations');
+  container.innerHTML = variations.map((v, i) => `
+    <div class="ocard" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem">
+        <div style="font-size:11px;font-family:var(--mono);color:var(--muted)">Variation ${i+1}</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-g" style="padding:3px 9px;font-size:10px" onclick="loadVariation(${i})">Use this</button>
+          <button class="btn btn-o" style="padding:3px 9px;font-size:10px" onclick="copyVariation(${i})">Copy</button>
+        </div>
+      </div>
+      <div class="template-body" id="aiVar${i}" style="white-space:pre-wrap;font-size:12px;line-height:1.7">${esc(v)}</div>
+    </div>`).join('');
+
+  document.getElementById('aiResults').style.display = 'block';
+  window._aiVariations = variations;
+}
+
+function loadVariation(i) {
+  const v = window._aiVariations?.[i];
+  if (!v) return;
+  switchOutTab('compose');
+  document.getElementById('outBody').value = v;
+  const name = document.getElementById('aiName').value;
+  document.getElementById('outSubject').value = name ? `Quick note for ${name}` : 'Quick question';
+  showToast('Variation loaded into composer','s');
+}
+
+function copyVariation(i) {
+  const v = window._aiVariations?.[i];
+  if (!v) return;
+  navigator.clipboard.writeText(v).then(() => showToast('Copied!','s'));
+}
+
+// ── PLAN FEATURE LOCKING ───────────────────────────────────────────────────
+function lockFeaturesByPlan() {
+  const plan = G.user?.plan || 'basic';
+  // Bulk search — Pro+
+  const bulkNav = document.getElementById('nav-bulk');
+  if (bulkNav) {
+    const locked = plan === 'basic';
+    bulkNav.style.opacity = locked ? '0.4' : '1';
+    bulkNav.style.pointerEvents = locked ? 'none' : 'auto';
+    bulkNav.title = locked ? 'Upgrade to Pro for Bulk Search' : '';
+  }
+  // Community — Pro+
+  const commNav = document.getElementById('nav-community');
+  if (commNav) {
+    const locked = plan === 'basic';
+    commNav.style.opacity = locked ? '0.4' : '1';
+    commNav.style.pointerEvents = locked ? 'none' : 'auto';
+    commNav.title = locked ? 'Upgrade to Pro for Community' : '';
+  }
+  // Website quality filter — Agency only
+  const wqWrap = document.getElementById('wqFilterWrap');
+  const wqLock = document.getElementById('wqLockTag');
+  const wqSel = document.getElementById('wqFilter');
+  if (wqWrap) {
+    if (plan !== 'agency') {
+      if (wqSel) { wqSel.disabled = true; wqSel.style.opacity = '0.4'; }
+      if (wqLock) wqLock.style.display = 'inline';
+    } else {
+      if (wqSel) { wqSel.disabled = false; wqSel.style.opacity = '1'; }
+      if (wqLock) wqLock.style.display = 'none';
+    }
+  }
+}
