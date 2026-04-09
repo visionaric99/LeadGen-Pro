@@ -41,8 +41,8 @@ async function initDB() {
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
   `);
-  // Ensure admin account exists
-  const existing = await pool.query('SELECT email FROM users WHERE email=$1', ['visionaricscaling@gmail.com']);
+  // Ensure admin account exists with correct plan
+  const existing = await pool.query('SELECT email, plan FROM users WHERE email=$1', ['visionaricscaling@gmail.com']);
   if (!existing.rows.length) {
     const hashed = await require('bcryptjs').hash('Visionaric2024!', 10);
     await pool.query(
@@ -50,6 +50,10 @@ async function initDB() {
       ['visionaricscaling@gmail.com', hashed, 'agency']
     );
     console.log('[DB] Admin account created');
+  } else if (existing.rows[0].plan !== 'agency') {
+    // Fix plan if it was saved as pending
+    await pool.query('UPDATE users SET plan=$1 WHERE email=$2', ['agency', 'visionaricscaling@gmail.com']);
+    console.log('[DB] Admin plan fixed to agency');
   }
   console.log('[DB] Connected to Supabase');
 }
@@ -57,33 +61,48 @@ initDB().catch(e => console.error('[DB] Init failed:', e.message));
 
 // DB helper functions — drop-in replacements for users.get/set/has
 async function dbGetUser(email) {
-  const r = await pool.query('SELECT * FROM users WHERE email=$1', [email.toLowerCase()]);
-  if (!r.rows.length) return null;
-  const u = r.rows[0];
-  return {
-    email: u.email, password: u.password, plan: u.plan,
-    stripeCustomerId: u.stripe_customer_id,
-    stripeSubscriptionId: u.stripe_subscription_id,
-    createdAt: u.created_at
-  };
+  try {
+    const r = await pool.query('SELECT * FROM users WHERE email=$1', [email.toLowerCase()]);
+    if (!r.rows.length) return null;
+    const u = r.rows[0];
+    return {
+      email: u.email, password: u.password, plan: u.plan,
+      stripeCustomerId: u.stripe_customer_id,
+      stripeSubscriptionId: u.stripe_subscription_id,
+      createdAt: u.created_at
+    };
+  } catch(e) {
+    console.error('[DB] dbGetUser error:', e.message);
+    return null;
+  }
 }
 async function dbSetUser(user) {
-  await pool.query(`
-    INSERT INTO users (email, password, plan, stripe_customer_id, stripe_subscription_id)
-    VALUES ($1,$2,$3,$4,$5)
-    ON CONFLICT (email) DO UPDATE SET
-      password=EXCLUDED.password, plan=EXCLUDED.plan,
-      stripe_customer_id=EXCLUDED.stripe_customer_id,
-      stripe_subscription_id=EXCLUDED.stripe_subscription_id
-  `, [user.email.toLowerCase(), user.password, user.plan,
-      user.stripeCustomerId||null, user.stripeSubscriptionId||null]);
+  try {
+    await pool.query(`
+      INSERT INTO users (email, password, plan, stripe_customer_id, stripe_subscription_id)
+      VALUES ($1,$2,$3,$4,$5)
+      ON CONFLICT (email) DO UPDATE SET
+        password=EXCLUDED.password, plan=EXCLUDED.plan,
+        stripe_customer_id=EXCLUDED.stripe_customer_id,
+        stripe_subscription_id=EXCLUDED.stripe_subscription_id
+    `, [user.email.toLowerCase(), user.password, user.plan,
+        user.stripeCustomerId||null, user.stripeSubscriptionId||null]);
+  } catch(e) {
+    console.error('[DB] dbSetUser error:', e.message);
+    throw e;
+  }
 }
 async function dbDeleteUser(email) {
   await pool.query('DELETE FROM users WHERE email=$1', [email.toLowerCase()]);
 }
 async function dbUserExists(email) {
-  const r = await pool.query('SELECT 1 FROM users WHERE email=$1', [email.toLowerCase()]);
-  return r.rows.length > 0;
+  try {
+    const r = await pool.query('SELECT 1 FROM users WHERE email=$1', [email.toLowerCase()]);
+    return r.rows.length > 0;
+  } catch(e) {
+    console.error('[DB] dbUserExists error:', e.message);
+    return false;
+  }
 }
 async function dbFindByStripeCustomer(customerId) {
   const r = await pool.query('SELECT * FROM users WHERE stripe_customer_id=$1', [customerId]);
@@ -328,8 +347,13 @@ app.post('/api/login', async (req, res) => {
   if (!user) return res.status(401).json({ error: 'No account found with that email' });
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) return res.status(401).json({ error: 'Incorrect password' });
+  // Admin emails always get agency plan regardless of DB value
+  if (ADMIN_EMAILS.includes(user.email) && user.plan !== 'agency') {
+    user.plan = 'agency';
+    await dbSetUser(user);
+  }
   const token = jwt.sign({ email: user.email, plan: user.plan }, JWT_SECRET, { expiresIn: '30d' });
-  res.json({ token, email: user.email, plan: user.plan, planLabel: PLANS[user.plan]?.label, limits: PLANS[user.plan] });
+  res.json({ token, email: user.email, plan: user.plan, planLabel: PLANS[user.plan]?.label || 'Agency', limits: PLANS[user.plan] });
 });
 
 app.get('/api/me', auth, async (req, res) => {
