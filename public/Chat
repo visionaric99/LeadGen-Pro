@@ -1,0 +1,143 @@
+// ── COMMUNITY CHAT ────────────────────────────────────────────────────────
+let chatWs = null;
+let chatConnected = false;
+let chatInited = false;
+
+function initChat() {
+  if (chatInited) return;
+  chatInited = true;
+  connectChat();
+}
+
+function connectChat() {
+  const token = G.token || '';
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const url = `${proto}//${location.host}?token=${encodeURIComponent(token)}`;
+
+  chatWs = new WebSocket(url);
+
+  chatWs.onopen = () => {
+    chatConnected = true;
+    document.getElementById('chatOffline').style.display = 'none';
+  };
+
+  chatWs.onmessage = (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.type === 'history') {
+        document.getElementById('chatMsgs').innerHTML = '';
+        document.getElementById('chatOffline').style.display = 'none';
+        resetChatState();
+        data.messages.forEach(m => appendMsg(m));
+        scrollChat();
+      } else if (data.type === 'message') {
+        appendMsg(data);
+        scrollChat();
+      } else if (data.type === 'system') {
+        appendSystem(data.text);
+        scrollChat();
+      } else if (data.type === 'users') {
+        const count = data.count || 0;
+        document.getElementById('onlineCount').textContent = count + ' online';
+        document.getElementById('onlineBadge').textContent = count;
+      }
+    } catch(e) {}
+  };
+
+  chatWs.onclose = () => {
+    chatConnected = false;
+    // Reconnect after 3s
+    setTimeout(() => { if (chatInited) connectChat(); }, 3000);
+  };
+
+  chatWs.onerror = () => { chatWs.close(); };
+}
+
+let lastMsgSender = null;
+let lastMsgTime = 0;
+let lastMsgDate = '';
+
+function appendMsg(msg) {
+  const myEmail = G.user?.email || '';
+  const isOwn = msg.email === myEmail;
+  const initials = (msg.displayName || '?').slice(0,2).toUpperCase();
+  const msgDate = new Date(msg.ts).toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'});
+  const time = new Date(msg.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const msgsEl = document.getElementById('chatMsgs');
+  const timeDiff = msg.ts - lastMsgTime;
+  const sameUser = lastMsgSender === msg.email && timeDiff < 5*60*1000;
+
+  // Date divider
+  if (msgDate !== lastMsgDate) {
+    const datDiv = document.createElement('div');
+    datDiv.className = 'chat-date-divider';
+    datDiv.innerHTML = `<span>${msgDate}</span>`;
+    msgsEl.appendChild(datDiv);
+    lastMsgDate = msgDate;
+    lastMsgSender = null; // force new header after date break
+  }
+
+  const div = document.createElement('div');
+  if (!sameUser) {
+    // Full message with avatar and name
+    div.className = 'chat-msg';
+    div.innerHTML = `
+      <div class="chat-avatar ${isOwn?'own':''}">${initials}</div>
+      <div class="chat-bubble">
+        <div class="chat-name">
+          <span class="${isOwn?'chat-name-own':''}">${esc(msg.displayName)}</span>
+          ${isOwn?'<span class="you-tag">you</span>':''}
+          <span class="chat-time">${time}</span>
+        </div>
+        <div class="chat-text">${esc(msg.text).replace(/\n/g,'<br>')}</div>
+      </div>`;
+  } else {
+    // Compact continuation — no avatar/name repeat
+    div.className = 'chat-msg-cont';
+    div.innerHTML = `
+      <div class="chat-cont-time">${time}</div>
+      <div class="chat-text">${esc(msg.text).replace(/\n/g,'<br>')}</div>`;
+  }
+  msgsEl.appendChild(div);
+  lastMsgSender = msg.email;
+  lastMsgTime = msg.ts;
+}
+
+function resetChatState() {
+  lastMsgSender = null;
+  lastMsgTime = 0;
+  lastMsgDate = '';
+}
+
+function appendSystem(text) {
+  const msgsEl = document.getElementById('chatMsgs');
+  const div = document.createElement('div');
+  div.className = 'chat-system';
+  div.textContent = text;
+  msgsEl.appendChild(div);
+}
+
+function scrollChat() {
+  const el = document.getElementById('chatMsgs');
+  el.scrollTop = el.scrollHeight;
+}
+
+function sendChatMsg() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!chatConnected || !chatWs || chatWs.readyState !== WebSocket.OPEN) {
+    showToast('Not connected to chat — reconnecting…','e');
+    connectChat();
+    return;
+  }
+  chatWs.send(JSON.stringify({ type: 'message', text }));
+  input.value = '';
+  input.style.height = 'auto';
+}
+
+function insertTopic(topic) {
+  const input = document.getElementById('chatInput');
+  input.value = topic + ': ';
+  input.focus();
+}
