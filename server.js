@@ -1,4 +1,5 @@
 const express = require('express');
+const { Pool } = require('pg');
 const http = require('http');
 const { WebSocketServer, WebSocket } = require('ws');
 const https = require('https');
@@ -22,25 +23,75 @@ app.use((req, res, next) => {
 });
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ── USERS (in-memory — replace with a DB like PlanetScale or Supabase later)
-const users = new Map();
-users.set('visionaricscaling@gmail.com', {
-  email: 'visionaricscaling@gmail.com',
-  password: bcrypt.hashSync('Visionaric2024!', 10),
-  plan: 'agency',
-  stripeCustomerId: null,
-  createdAt: new Date().toISOString()
+// ── DATABASE (Supabase/Postgres) ──────────────────────────────────────────
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
 });
 
-// Test account — survives restarts for Stripe testing
-users.set('test@leadgenpro.com', {
-  email: 'test@leadgenpro.com',
-  password: bcrypt.hashSync('Test1234!', 10),
-  plan: 'pending',
-  stripeCustomerId: null,
-  createdAt: new Date().toISOString()
-});
+// Initialize DB — create tables if not exist
+async function initDB() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      email TEXT PRIMARY KEY,
+      password TEXT NOT NULL,
+      plan TEXT DEFAULT 'pending',
+      stripe_customer_id TEXT,
+      stripe_subscription_id TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+  // Ensure admin account exists
+  const existing = await pool.query('SELECT email FROM users WHERE email=$1', ['visionaricscaling@gmail.com']);
+  if (!existing.rows.length) {
+    const hashed = await require('bcryptjs').hash('Visionaric2024!', 10);
+    await pool.query(
+      'INSERT INTO users (email, password, plan) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING',
+      ['visionaricscaling@gmail.com', hashed, 'agency']
+    );
+    console.log('[DB] Admin account created');
+  }
+  console.log('[DB] Connected to Supabase');
+}
+initDB().catch(e => console.error('[DB] Init failed:', e.message));
 
+// DB helper functions — drop-in replacements for users.get/set/has
+async function dbGetUser(email) {
+  const r = await pool.query('SELECT * FROM users WHERE email=$1', [email.toLowerCase()]);
+  if (!r.rows.length) return null;
+  const u = r.rows[0];
+  return {
+    email: u.email, password: u.password, plan: u.plan,
+    stripeCustomerId: u.stripe_customer_id,
+    stripeSubscriptionId: u.stripe_subscription_id,
+    createdAt: u.created_at
+  };
+}
+async function dbSetUser(user) {
+  await pool.query(`
+    INSERT INTO users (email, password, plan, stripe_customer_id, stripe_subscription_id)
+    VALUES ($1,$2,$3,$4,$5)
+    ON CONFLICT (email) DO UPDATE SET
+      password=EXCLUDED.password, plan=EXCLUDED.plan,
+      stripe_customer_id=EXCLUDED.stripe_customer_id,
+      stripe_subscription_id=EXCLUDED.stripe_subscription_id
+  `, [user.email.toLowerCase(), user.password, user.plan,
+      user.stripeCustomerId||null, user.stripeSubscriptionId||null]);
+}
+async function dbDeleteUser(email) {
+  await pool.query('DELETE FROM users WHERE email=$1', [email.toLowerCase()]);
+}
+async function dbUserExists(email) {
+  const r = await pool.query('SELECT 1 FROM users WHERE email=$1', [email.toLowerCase()]);
+  return r.rows.length > 0;
+}
+async function dbFindByStripeCustomer(customerId) {
+  const r = await pool.query('SELECT * FROM users WHERE stripe_customer_id=$1', [customerId]);
+  if (!r.rows.length) return null;
+  const u = r.rows[0];
+  return { email:u.email, password:u.password, plan:u.plan,
+    stripeCustomerId:u.stripe_customer_id, stripeSubscriptionId:u.stripe_subscription_id };
+}
 // ── PLANS ──────────────────────────────────────────────────────────────────
 // No free tier — minimum $29/mo required to access the tool
 const PLANS = {
@@ -138,8 +189,8 @@ function auth(req, res, next) {
   }
 }
 
-function requirePlan(req, res, next) {
-  const user = users.get(req.user?.email);
+async function requirePlan(req, res, next) {
+  const user = await dbGetUser(req.user?.email);
   if (!user) return res.status(401).json({ error: 'User not found' });
   if (ADMIN_EMAILS.includes(user.email)) return next();
   if (!user.plan || user.plan === 'pending') {
@@ -264,18 +315,16 @@ app.post('/api/signup', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
   if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
-  if (users.has(email.toLowerCase())) return res.status(400).json({ error: 'An account with that email already exists' });
+  if (await dbUserExists(email)) return res.status(400).json({ error: 'An account with that email already exists' });
   const hashed = await bcrypt.hash(password, 10);
-  // New users start as 'pending' — must subscribe before accessing the tool
-  const user = { email: email.toLowerCase(), password: hashed, plan: 'pending', stripeCustomerId: null, createdAt: new Date().toISOString() };
-  users.set(email.toLowerCase(), user);
+  await dbSetUser({ email: email.toLowerCase(), password: hashed, plan: 'pending', stripeCustomerId: null, stripeSubscriptionId: null });
   const token = jwt.sign({ email: email.toLowerCase(), plan: 'pending' }, JWT_SECRET, { expiresIn: '30d' });
   res.json({ token, email: email.toLowerCase(), plan: 'pending', planLabel: 'Choose a plan', requiresPayment: true });
 });
 
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
-  const user = users.get(email?.toLowerCase());
+  const user = await dbGetUser(email?.toLowerCase());
   if (!user) return res.status(401).json({ error: 'No account found with that email' });
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) return res.status(401).json({ error: 'Incorrect password' });
@@ -283,8 +332,8 @@ app.post('/api/login', async (req, res) => {
   res.json({ token, email: user.email, plan: user.plan, planLabel: PLANS[user.plan]?.label, limits: PLANS[user.plan] });
 });
 
-app.get('/api/me', auth, (req, res) => {
-  const user = users.get(req.user.email);
+app.get('/api/me', auth, async (req, res) => {
+  const user = await dbGetUser(req.user.email);
   if (!user) return res.status(404).json({ error: 'User not found' });
   res.json({ email: user.email, plan: user.plan, planLabel: PLANS[user.plan]?.label, limits: PLANS[user.plan] });
 });
@@ -292,34 +341,31 @@ app.get('/api/me', auth, (req, res) => {
 // ── UPDATE PROFILE ────────────────────────────────────────────────────────
 app.post('/api/update-profile', auth, async (req, res) => {
   const { newEmail, newPassword, currentPassword } = req.body;
-  const user = users.get(req.user.email);
+  const user = await dbGetUser(req.user.email);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
-  // Verify current password
   const valid = await bcrypt.compare(currentPassword, user.password);
   if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
 
-  // Update email
   if (newEmail && newEmail !== user.email) {
-    if (users.has(newEmail.toLowerCase())) return res.status(400).json({ error: 'That email is already taken' });
-    users.delete(user.email);
+    if (await dbUserExists(newEmail)) return res.status(400).json({ error: 'That email is already taken' });
+    await dbDeleteUser(user.email);
     user.email = newEmail.toLowerCase();
-    users.set(user.email, user);
   }
 
-  // Update password
   if (newPassword) {
     if (newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
     user.password = await bcrypt.hash(newPassword, 10);
   }
 
-  const token = require('jsonwebtoken').sign({ email: user.email, plan: user.plan }, JWT_SECRET, { expiresIn: '30d' });
+  await dbSetUser(user);
+  const token = jwt.sign({ email: user.email, plan: user.plan }, JWT_SECRET, { expiresIn: '30d' });
   res.json({ success: true, token, email: user.email, plan: user.plan, planLabel: PLANS[user.plan]?.label });
 });
 
 // ── USAGE STATS ────────────────────────────────────────────────────────────
-app.get('/api/usage', auth, (req, res) => {
-  const user = users.get(req.user.email);
+app.get('/api/usage', auth, async (req, res) => {
+  const user = await dbGetUser(req.user.email);
   if (!user) return res.status(404).json({ error: 'User not found' });
   const isAdmin = ADMIN_EMAILS.includes(user.email);
   const plan = PLANS[user.plan];
@@ -364,7 +410,7 @@ app.post('/api/create-checkout', auth, async (req, res) => {
   const priceId = STRIPE_PRICES[plan];
   if (!priceId) return res.status(400).json({ error: 'Invalid plan' });
 
-  const user = users.get(req.user.email);
+  const user = await dbGetUser(req.user.email);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
   try {
@@ -424,11 +470,12 @@ app.post('/api/stripe-webhook', async (req, res) => {
     const plan = session.metadata?.plan;
 
     if (email && plan && PLANS[plan]) {
-      const user = users.get(email.toLowerCase());
+      const user = await dbGetUser(email.toLowerCase());
       if (user) {
         user.plan = plan;
         user.stripeCustomerId = session.customer;
         user.stripeSubscriptionId = session.subscription;
+        await dbSetUser(user);
         console.log(`[STRIPE] Upgraded ${email} to ${plan}`);
       }
     }
@@ -437,30 +484,26 @@ app.post('/api/stripe-webhook', async (req, res) => {
   if (event.type === 'customer.subscription.deleted') {
     const sub = event.data.object;
     const customerId = sub.customer;
-    // Find user by stripe customer ID
-    for (const [email, user] of users.entries()) {
-      if (user.stripeCustomerId === customerId) {
-        user.plan = 'pending';
-        user.stripeSubscriptionId = null;
-        console.log(`[STRIPE] Cancelled subscription for ${email}`);
-        break;
-      }
+    const user = await dbFindByStripeCustomer(customerId);
+    if (user) {
+      user.plan = 'pending';
+      user.stripeSubscriptionId = null;
+      await dbSetUser(user);
+      console.log(`[STRIPE] Cancelled subscription for ${user.email}`);
     }
   }
 
   if (event.type === 'customer.subscription.updated') {
     const sub = event.data.object;
     const customerId = sub.customer;
-    // Handle plan changes
-    for (const [email, user] of users.entries()) {
-      if (user.stripeCustomerId === customerId) {
-        const priceId = sub.items?.data?.[0]?.price?.id;
-        const newPlan = Object.keys(STRIPE_PRICES).find(k => STRIPE_PRICES[k] === priceId);
-        if (newPlan) {
-          user.plan = newPlan;
-          console.log(`[STRIPE] Updated ${email} plan to ${newPlan}`);
-        }
-        break;
+    const user = await dbFindByStripeCustomer(customerId);
+    if (user) {
+      const priceId = sub.items?.data?.[0]?.price?.id;
+      const newPlan = Object.keys(STRIPE_PRICES).find(k => STRIPE_PRICES[k] === priceId);
+      if (newPlan) {
+        user.plan = newPlan;
+        await dbSetUser(user);
+        console.log(`[STRIPE] Updated ${user.email} plan to ${newPlan}`);
       }
     }
   }
@@ -470,7 +513,7 @@ app.post('/api/stripe-webhook', async (req, res) => {
 
 // Get subscription status
 app.get('/api/subscription', auth, async (req, res) => {
-  const user = users.get(req.user.email);
+  const user = await dbGetUser(req.user.email);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
   res.json({
@@ -486,7 +529,7 @@ app.get('/api/search', auth, requirePlan, async (req, res) => {
   const { q, loc, limit, noWebsite, minRevenue } = req.query;
   if (!q || !loc) return res.status(400).json({ error: 'Missing search query or location' });
 
-  const user = users.get(req.user.email);
+  const user = await dbGetUser(req.user.email);
   if (!user) return res.status(401).json({ error: 'User not found' });
 
   const isAdmin = ADMIN_EMAILS.includes(user.email);
