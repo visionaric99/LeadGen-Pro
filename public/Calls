@@ -1,0 +1,177 @@
+// ── UPCOMING CALLS ────────────────────────────────────────────────────────
+const PLATFORM_ICONS = {zoom:'🎥',meet:'📹',phone:'📞',other:'💬'};
+const STATUS_CLASS = {scheduled:'status-scheduled',confirmed:'status-confirmed',rescheduled:'status-rescheduled',completed:'status-completed',cancelled:'status-cancelled'};
+const STATUS_LABEL = {scheduled:'Scheduled',confirmed:'Confirmed',rescheduled:'Rescheduled',completed:'Completed',cancelled:'Cancelled'};
+const ORIGIN_LABEL = {cold:'Cold call',email:'Email outreach',dm:'DM outreach',referral:'Referral',other:'Other'};
+
+function persistCalls() {
+  localStorage.setItem('lg_calls', JSON.stringify(G.calls));
+  updateCallsBadge();
+}
+
+function updateCallsBadge() {
+  const el = document.getElementById('callsBadge');
+  if (!el) return;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const in7 = new Date(today); in7.setDate(in7.getDate()+7);
+  const upcoming = G.calls.filter(c => {
+    const d = new Date(c.date); d.setHours(0,0,0,0);
+    return d >= today && d <= in7 && c.status !== 'completed' && c.status !== 'cancelled';
+  });
+  el.textContent = upcoming.length;
+}
+
+function openCallModal(call) {
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('callMoTitle').textContent = call ? 'Edit Call' : 'Schedule Call';
+  document.getElementById('callBiz').value = call?.biz || '';
+  document.getElementById('callContact').value = call?.contact || '';
+  document.getElementById('callPhone').value = call?.phone || '';
+  document.getElementById('callEmail').value = call?.email || '';
+  document.getElementById('callDate').value = call?.date || today;
+  document.getElementById('callTime').value = call?.time || '10:00';
+  document.getElementById('callPlatform').value = call?.platform || 'zoom';
+  document.getElementById('callStatus').value = call?.status || 'scheduled';
+  document.getElementById('callLink').value = call?.link || '';
+  document.getElementById('callCloser').value = call?.closer || '';
+  document.getElementById('callOrigin').value = call?.origin || 'cold';
+  document.getElementById('callPriority').value = call?.priority || 'normal';
+  document.getElementById('callWebsite').value = call?.website || '';
+  document.getElementById('callPresent').value = call?.present || '';
+  document.getElementById('callNotes').value = call?.notes || '';
+  document.getElementById('callEditId').value = call?.id || '';
+  document.getElementById('callDeleteBtn').style.display = call ? 'inline-flex' : 'none';
+  document.getElementById('callMo').classList.add('on');
+}
+
+function closeCallMo() { document.getElementById('callMo').classList.remove('on'); }
+
+function saveCall() {
+  const biz = document.getElementById('callBiz').value.trim();
+  const date = document.getElementById('callDate').value;
+  const time = document.getElementById('callTime').value;
+  if (!biz) { showToast('Business name required','e'); return; }
+  if (!date) { showToast('Date required','e'); return; }
+  const editId = document.getElementById('callEditId').value;
+  const call = {
+    id: editId || 'call_' + Date.now(),
+    biz, date, time,
+    contact: document.getElementById('callContact').value.trim(),
+    phone: document.getElementById('callPhone').value.trim(),
+    email: document.getElementById('callEmail').value.trim(),
+    platform: document.getElementById('callPlatform').value,
+    status: document.getElementById('callStatus').value,
+    link: document.getElementById('callLink').value.trim(),
+    closer: document.getElementById('callCloser').value.trim(),
+    origin: document.getElementById('callOrigin').value,
+    priority: document.getElementById('callPriority').value,
+    website: document.getElementById('callWebsite').value.trim(),
+    present: document.getElementById('callPresent').value.trim(),
+    notes: document.getElementById('callNotes').value.trim(),
+    createdAt: editId ? (G.calls.find(c=>c.id===editId)?.createdAt||Date.now()) : Date.now()
+  };
+  if (editId) {
+    const idx = G.calls.findIndex(c=>c.id===editId);
+    if (idx>=0) G.calls[idx]=call; else G.calls.push(call);
+  } else {
+    G.calls.push(call);
+  }
+  persistCalls();
+  renderCalls();
+  closeCallMo();
+  showToast(editId?'Call updated':'Call scheduled','s');
+}
+
+function deleteCallEntry() {
+  const id = document.getElementById('callEditId').value;
+  if (!id) return;
+  G.calls = G.calls.filter(c=>c.id!==id);
+  persistCalls();
+  renderCalls();
+  closeCallMo();
+  showToast('Call removed','i');
+}
+
+function renderCalls() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const in7 = new Date(today); in7.setDate(in7.getDate()+7);
+
+  // Get calls in next 7 days, sorted by date+time
+  const calls = G.calls
+    .filter(c => { const d=new Date(c.date); d.setHours(0,0,0,0); return d>=today && d<=in7; })
+    .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+
+  const emptyEl = document.getElementById('callsEmpty');
+  const daysEl = document.getElementById('callsDays');
+
+  if (!calls.length) {
+    emptyEl.style.display='flex'; daysEl.innerHTML='';
+    return;
+  }
+  emptyEl.style.display='none';
+
+  // Group by date
+  const groups = {};
+  calls.forEach(c => { if(!groups[c.date]) groups[c.date]=[]; groups[c.date].push(c); });
+
+  // Build 7-day range labels
+  const dayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  daysEl.innerHTML = Object.entries(groups).map(([dateStr, dayCalls]) => {
+    const d = new Date(dateStr+'T00:00:00');
+    const isToday = d.toDateString() === today.toDateString();
+    const isTomorrow = d - today === 86400000;
+    const dayLabel = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : dayNames[d.getDay()];
+    const dateLabel = `${monthNames[d.getMonth()]} ${d.getDate()}`;
+
+    return `<div class="day-group">
+      <div class="day-label ${isToday?'is-today':''}">
+        <span>${dayLabel} · ${dateLabel}</span>
+        ${isToday?'<span class="today-pill">TODAY</span>':''}
+      </div>
+      ${dayCalls.map(c => {
+        const priorityIcon = c.priority==='high'?'🔴':c.priority==='urgent'?'🚨':'';
+        return `<div class="call-card ${isToday?'today-highlight':''}" onclick="openCallModal(G.calls.find(x=>x.id==='${esc(c.id)}'))" style="margin-bottom:8px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap">
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:3px">
+                <strong style="font-size:13.5px">${esc(c.biz)}</strong>
+                ${priorityIcon?`<span class="priority-flag">${priorityIcon}</span>`:''}
+                <span class="call-status ${STATUS_CLASS[c.status]||'status-scheduled'}">${STATUS_LABEL[c.status]||c.status}</span>
+              </div>
+              <div style="font-size:12px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap">
+                <span><span class="platform-icon">${PLATFORM_ICONS[c.platform]||'💬'}</span>${c.time||'—'}</span>
+                ${c.contact?`<span>👤 ${esc(c.contact)}</span>`:''}
+                ${c.phone?`<span>📞 ${esc(c.phone)}</span>`:''}
+                ${c.closer?`<span>🎯 ${esc(c.closer)}</span>`:''}
+              </div>
+              ${c.link?`<a href="${esc(c.link)}" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:var(--accent);font-family:var(--mono);display:block;margin-top:3px">${esc(c.link.slice(0,50))}</a>`:''}
+              ${c.notes?`<div style="font-size:11px;color:var(--muted);margin-top:4px;font-style:italic">${esc(c.notes.slice(0,80))}${c.notes.length>80?'…':''}</div>`:''}
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
+              <span style="font-size:10px;font-family:var(--mono);color:var(--muted)">${ORIGIN_LABEL[c.origin]||c.origin||''}</span>
+              <button class="btn btn-o" style="padding:3px 9px;font-size:10px" onclick="event.stopPropagation();quickUpdateCallStatus('${esc(c.id)}')">Update</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+
+  // Update week label
+  const endDate = new Date(in7); endDate.setDate(endDate.getDate()-1);
+  document.getElementById('callsWeekLabel').textContent =
+    `${monthNames[today.getMonth()]} ${today.getDate()} – ${monthNames[endDate.getMonth()]} ${endDate.getDate()} · ${calls.length} call${calls.length!==1?'s':''}`;
+}
+
+function quickUpdateCallStatus(id) {
+  const call = G.calls.find(c=>c.id===id);
+  if (!call) return;
+  const statuses = ['scheduled','confirmed','rescheduled','completed','cancelled'];
+  const curr = statuses.indexOf(call.status);
+  call.status = statuses[(curr+1) % statuses.length];
+  persistCalls();
+  renderCalls();
+  showToast('Status → ' + STATUS_LABEL[call.status],'i');
+}
