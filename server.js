@@ -642,6 +642,23 @@ app.get('/api/search', auth, requirePlan, async (req, res) => {
   res.json({ leads: finalLeads, errors, total: finalLeads.length, plan: user.plan, exportLimit: planLimits.exports, filtered: filterNoWebsite });
 });
 
+// ── ADMIN SEED (one-time use) ─────────────────────────────────────────────
+app.get('/api/seed-admin', async (req, res) => {
+  const secret = req.query.secret;
+  if (secret !== 'visionaric-seed-2024') return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const hashed = await bcrypt.hash('Visionaric2024!', 10);
+    await pool.query(`
+      INSERT INTO users (email, password, plan)
+      VALUES ($1, $2, 'agency')
+      ON CONFLICT (email) DO UPDATE SET plan = 'agency', password = $2
+    `, ['visionaricscaling@gmail.com', hashed]);
+    res.json({ success: true, message: 'Admin account seeded with agency plan' });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── HEALTH ─────────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
