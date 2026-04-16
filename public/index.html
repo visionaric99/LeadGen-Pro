@@ -1121,7 +1121,9 @@ async function runSearch() {
     const arcIds=new Set(G.archived.map(a=>a.id));
     leads=leads.filter(l=>!arcIds.has(l.id));
     G.leads=leads; G.sel.clear(); G.exportLimit=res.exportLimit||0;
-    setTimeout(()=>{ pw.classList.remove('on'); if(res.debug||res.errors?.length) showEb((res.debug||res.errors.join(' | ')),'eb'); leads.length?renderLeads():showEmpty('es','No results found','Try a different term or city. Check the red error above.');
+    setTimeout(()=>{ pw.classList.remove('on'); if(res.debug||res.errors?.length) showEb((res.debug||res.errors.join(' | ')),'eb'); // Filter out any leads the user has already archived
+G.leads = (res.leads||[]).filter(l=>!G.archivedIds.has(l.id));
+G.leads.length?renderLeads():showEmpty('es','No results found','Try a different term or city. Check the red error above.');
       checkCreditsAfterSearch(); },300);
   } catch(e){ pw.classList.remove('on'); showEb('Search failed: '+e.message,'eb'); }
   finally{ btn.disabled=false; }
@@ -1155,7 +1157,7 @@ async function runBulkSearch() {
   const pw=document.getElementById('bulkPw'); pw.classList.add('on');
   const btn=document.getElementById('bulkBtn'); btn.disabled=true;
   G.bulkLeads=[];
-  const arcIds=new Set(G.archived.map(a=>a.id));
+  const arcIds=G.archivedIds; // Use live Set — always up to date
   for(let i=0;i<rows.length;i++){
     const r=rows[i];
     const pct=Math.round(((i)/rows.length)*90)+5;
@@ -1231,7 +1233,8 @@ function psc(s){return s>=70?'ph':s>=40?'pm':'pl';}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 function renderLeads() {
-  G.leads=G.leads.filter(l=>!G.archivedIds.has(l.id));
+  // Filter archived leads from display (non-destructive — keep in G.leads until explicitly removed)
+const _activeLeads = G.leads.filter(l=>!G.archivedIds.has(l.id)); G.leads=_activeLeads;
   const _filtered=applyFilters(G.leads);
   const filterOn = G.filters.noWebsite;
   const rcText = filterOn
@@ -1283,19 +1286,46 @@ function persistSaved(){localStorage.setItem('lg_saved',JSON.stringify(G.saved))
 
 // ── ARCHIVE ────────────────────────────────────────────────────────────────
 function archiveLead(id, pool='main') {
-  const src=pool==='bulk'?G.bulkLeads:G.leads;
-  const l=src.find(x=>x.id===id);
-  if(l&&!G.archived.find(x=>x.id===id)){
-    G.archived.push(l);
-    localStorage.setItem('lg_archived',JSON.stringify(G.archived));
+  // Find lead from ALL possible pools
+  const lead =
+    G.leads.find(x=>x.id===id) ||
+    G.bulkLeads.find(x=>x.id===id) ||
+    G.saved.find(x=>x.id===id);
+
+  if (!lead) { console.warn('[archive] Lead not found:', id); return; }
+
+  // Add to archived if not already there
+  if (!G.archivedIds.has(id)) {
+    G.archived.push({ ...lead, crmStatus: 'archived' });
+    G.archivedIds.add(id);
+    localStorage.setItem('lg_archived', JSON.stringify(G.archived));
   }
-  if(pool==='main'){G.leads=G.leads.filter(x=>x.id!==id);renderLeads();}
-  else{G.bulkLeads=G.bulkLeads.filter(x=>x.id!==id);renderBulkLeads();}
-  updateBadges(); showToast('Archived','i'); renderArchive();
+
+  // Remove from ALL active pools simultaneously
+  G.leads = G.leads.filter(x=>x.id!==id);
+  G.bulkLeads = G.bulkLeads.filter(x=>x.id!==id);
+  G.saved = G.saved.filter(x=>x.id!==id);
+
+  // Persist saved (removes from CRM pipeline too)
+  persistSaved();
+
+  // Re-render everything that might show this lead
+  renderLeads();
+  renderBulkLeads();
+  renderSaved();
+  renderCrm();
+  renderArchive();
+  updateBadges();
+  showToast('Lead archived','i');
+}
+
+function archiveFromCrm(id) {
+  archiveLead(id, 'saved');
+  closeDrawer();
 }
 function archiveSelected(){G.sel.forEach(id=>archiveLead(id,'main'));G.sel.clear();}
-function archiveCurrent(){if(!G.cur)return;archiveLead(G.cur.id,'main');closeDrawer();}
-function clearArchive(){G.archived=[];localStorage.setItem('lg_archived','[]');updateBadges();renderArchive();showToast('Archive cleared','i');}
+function archiveCurrent(){if(!G.cur)return;archiveLead(G.cur.id,'saved');closeDrawer();}
+function clearArchive(){G.archived=[];G.archivedIds=new Set();localStorage.setItem('lg_archived','[]');updateBadges();renderArchive();showToast('Archive cleared','i');}
 function renderArchive(){
   const w=document.getElementById('archiveTw'),e=document.getElementById('archiveEmpty');
   document.getElementById('archiveCount').textContent=G.archived.length+' leads';
@@ -1308,7 +1338,23 @@ function renderArchive(){
     <td class="mu">${l.rating?l.rating+'★':'—'}</td>
     <td><button class="btn btn-o" style="padding:3px 9px;font-size:10px" onclick="unarchive('${esc(l.id)}')">Restore</button></td></tr>`).join('');
 }
-function unarchive(id){const l=G.archived.find(x=>x.id===id);if(!l)return;G.archived=G.archived.filter(x=>x.id!==id);localStorage.setItem('lg_archived',JSON.stringify(G.archived));updateBadges();renderArchive();showToast('Restored','s');}
+function unarchive(id){
+  const l=G.archived.find(x=>x.id===id);
+  if(!l)return;
+  // Remove from archived
+  G.archived=G.archived.filter(x=>x.id!==id);
+  G.archivedIds.delete(id);
+  localStorage.setItem('lg_archived',JSON.stringify(G.archived));
+  // Restore to saved with 'new' CRM status so it re-enters pipeline
+  const restored={...l, crmStatus:'new'};
+  if(!G.saved.find(x=>x.id===id)) G.saved.push(restored);
+  persistSaved();
+  renderCrm();
+  renderSaved();
+  updateBadges();
+  renderArchive();
+  showToast('Lead restored to CRM','s');
+}
 
 // ── SAVED VIEW ─────────────────────────────────────────────────────────────
 function renderSaved(){
@@ -1356,6 +1402,7 @@ function renderCrm(){
             <div class="kcard-actions">
               ${CRM_STAGES.filter(s=>s.id!==stage.id).map(s=>`
                 <button class="btn btn-o" style="padding:2px 6px;font-size:10px;margin-bottom:2px" onclick="event.stopPropagation();moveCrm('${esc(l.id)}','${s.id}')">${s.label}</button>`).join('')}
+              <button class="btn btn-d" style="padding:2px 6px;font-size:10px;margin-bottom:2px;margin-top:4px;width:100%" onclick="event.stopPropagation();archiveLead('${esc(l.id)}','saved')">🗄 Archive</button>
             </div>
           </div>`).join('')}
       </div>`;
