@@ -269,6 +269,9 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
 .topic-tag{padding:3px 10px;border-radius:999px;border:1px solid var(--border2);font-size:11px;color:var(--muted);cursor:pointer;transition:all .15s;font-family:var(--mono)}
 .topic-tag:hover{border-color:var(--accent);color:var(--accent)}
 
+.sess-live{animation:pulse-green 1.5s ease infinite}
+@keyframes pulse-green{0%,100%{opacity:1}50%{opacity:.6}}
+.kol{min-width:0}
 .call-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;cursor:pointer;transition:border-color .15s}
 .call-card:hover{border-color:var(--border2)}
 .call-card.today{border-left:3px solid var(--accent)}
@@ -554,7 +557,55 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
 
       <!-- CRM -->
       <div class="view" id="view-crm">
-        <div class="spanel" style="margin-bottom:0"><div class="ptitle">CRM Pipeline</div></div>
+        <div class="spanel" style="margin-bottom:0;padding-bottom:.6rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:.6rem">
+            <div class="ptitle" style="margin-bottom:0">CRM Pipeline</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <button class="btn btn-p" id="sessStartBtn" onclick="startSession()" style="font-size:11px;padding:4px 12px">▶ Start Session</button>
+              <button class="btn btn-o" id="sessStopBtn" onclick="stopSession()" style="font-size:11px;padding:4px 12px;display:none">⏸ Stop</button>
+              <button class="btn btn-o" id="sessResetBtn" onclick="resetSession()" style="font-size:11px;padding:4px 12px;display:none">↺ Reset</button>
+            </div>
+          </div>
+          <!-- SESSION TRACKER PANEL -->
+          <div id="sessPanel" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem">
+            <div style="display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center">
+              <!-- Timer -->
+              <div style="text-align:center;min-width:100px">
+                <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Session Time</div>
+                <div id="sessTimer" style="font-family:var(--mono);font-size:1.5rem;font-weight:700;color:var(--accent);letter-spacing:.05em">00:00:00</div>
+                <div id="sessStatus" style="font-size:9px;font-family:var(--mono);color:var(--muted);margin-top:2px">STOPPED</div>
+              </div>
+              <!-- Metrics -->
+              <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
+                <div style="background:var(--bg2);border-radius:7px;padding:.4rem .5rem;text-align:center">
+                  <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:2px">Worked</div>
+                  <div id="sessWorked" style="font-size:1.1rem;font-weight:700;font-family:var(--head);color:var(--text)">0</div>
+                </div>
+                <div style="background:var(--bg2);border-radius:7px;padding:.4rem .5rem;text-align:center">
+                  <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:2px">Interested</div>
+                  <div id="sessInterested" style="font-size:1.1rem;font-weight:700;font-family:var(--head);color:var(--yellow)">0</div>
+                </div>
+                <div style="background:var(--bg2);border-radius:7px;padding:.4rem .5rem;text-align:center">
+                  <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:2px">Lost</div>
+                  <div id="sessLost" style="font-size:1.1rem;font-weight:700;font-family:var(--head);color:var(--red)">0</div>
+                </div>
+                <div style="background:var(--bg2);border-radius:7px;padding:.4rem .5rem;text-align:center">
+                  <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:2px">Interest Rate</div>
+                  <div id="sessRate" style="font-size:1.1rem;font-weight:700;font-family:var(--head);color:var(--green)">0%</div>
+                </div>
+                <div style="background:var(--bg2);border-radius:7px;padding:.4rem .5rem;text-align:center">
+                  <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:2px">W/L Ratio</div>
+                  <div id="sessWL" style="font-size:1.1rem;font-weight:700;font-family:var(--head);color:var(--accent)">—</div>
+                </div>
+              </div>
+              <!-- Mini donut chart -->
+              <div style="text-align:center;min-width:80px">
+                <canvas id="sessChart" width="72" height="72"></canvas>
+                <div style="font-size:9px;font-family:var(--mono);color:var(--muted);margin-top:2px">Outcomes</div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="kanban" id="kanban"></div>
       </div>
 
@@ -890,7 +941,7 @@ Would you be open to a 10-min call this week?
 <div class="ov" id="ov" onclick="closeDrawer()"></div>
 <div class="drawer" id="drawer">
   <div class="dh"><div><div class="dt" id="drT">—</div><div class="ds" id="drS">—</div></div><button class="cls" onclick="closeDrawer()">✕</button></div>
-  <div class="dsec"><div class="dst">CRM Status</div><select class="crm-select" id="drCrmStatus" onchange="updateCrmStatus()"><option value="new">New</option><option value="contacted">Contacted</option><option value="interested">Interested</option><option value="closed">Won</option><option value="lost">Lost</option></select></div>
+  <div class="dsec"><div class="dst">CRM Status</div><select class="crm-select" id="drCrmStatus" onchange="updateCrmStatus()"><option value="new">New</option><option value="contacted">Contacted</option><option value="interested">Interested</option><option value="lost">Lost</option></select></div>
   <div class="dsec"><div class="dst">Contact</div><div id="drC"></div>
     <div style="margin-top:8px">
       <div style="font-size:9px;font-family:var(--mono);color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px">Email address</div>
@@ -1110,7 +1161,11 @@ async function runSearch() {
   try {
     const limit=document.getElementById('searchLimit')?.value||'20';
     const noWebsite=G.filters.noWebsite;
-    const filterParam=noWebsite?'&noWebsite=true':'';
+    const minRevenue=document.getElementById('minRevenue')?.value||'0';
+    const filterParam=[
+      noWebsite?'&noWebsite=true':'',
+      minRevenue&&minRevenue!=='0'?`&minRevenue=${minRevenue}`:''
+    ].join('');
     const res=await api(`/api/search?q=${encodeURIComponent(q)}&loc=${encodeURIComponent(loc)}&limit=${limit}${filterParam}`,'GET');
     setProg('pfill','ppct','ptxt',100,'Done!');
     if(res.requiresPayment){pw.classList.remove('on');showPaywall();return;}
@@ -1378,12 +1433,215 @@ function renderSaved(){
 }
 function remSaved(id){G.saved=G.saved.filter(l=>l.id!==id);persistSaved();updateBadges();renderSaved();renderCrm();}
 
+// ── SESSION TRACKER ────────────────────────────────────────────────────────
+const SESSION_KEY = 'lg_session';
+
+// Session state — persisted to localStorage
+let G_sess = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null') || {
+  running: false,
+  startedAt: null,      // timestamp when started
+  elapsed: 0,           // accumulated seconds before last stop
+  worked: new Set(),    // unique lead IDs touched this session
+  outcomes: {},         // { leadId: 'interested'|'lost'|'contacted'|'new' }
+  interested: 0,
+  lost: 0
+};
+// Restore Set from array (JSON doesn't preserve Sets)
+if (Array.isArray(G_sess.worked)) G_sess.worked = new Set(G_sess.worked);
+
+let sessInterval = null;
+
+function persistSession() {
+  const s = { ...G_sess, worked: [...G_sess.worked] };
+  localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+}
+
+function startSession() {
+  if (G_sess.running) return;
+  G_sess.running = true;
+  G_sess.startedAt = Date.now();
+  persistSession();
+  sessInterval = setInterval(tickSession, 1000);
+  document.getElementById('sessPanel').style.display = 'block';
+  document.getElementById('sessStartBtn').style.display = 'none';
+  document.getElementById('sessStopBtn').style.display = 'inline-flex';
+  document.getElementById('sessResetBtn').style.display = 'inline-flex';
+  document.getElementById('sessStatus').textContent = 'LIVE';
+  document.getElementById('sessStatus').style.color = 'var(--green)';
+}
+
+function stopSession() {
+  if (!G_sess.running) return;
+  G_sess.elapsed += Math.floor((Date.now() - G_sess.startedAt) / 1000);
+  G_sess.running = false;
+  G_sess.startedAt = null;
+  clearInterval(sessInterval);
+  sessInterval = null;
+  persistSession();
+  document.getElementById('sessStartBtn').style.display = 'inline-flex';
+  document.getElementById('sessStopBtn').style.display = 'none';
+  document.getElementById('sessStatus').textContent = 'PAUSED';
+  document.getElementById('sessStatus').style.color = 'var(--muted)';
+}
+
+function resetSession() {
+  clearInterval(sessInterval);
+  sessInterval = null;
+  G_sess = { running: false, startedAt: null, elapsed: 0, worked: new Set(), outcomes: {}, interested: 0, lost: 0 };
+  persistSession();
+  document.getElementById('sessPanel').style.display = 'none';
+  document.getElementById('sessStartBtn').style.display = 'inline-flex';
+  document.getElementById('sessStopBtn').style.display = 'none';
+  document.getElementById('sessResetBtn').style.display = 'none';
+  document.getElementById('sessTimer').textContent = '00:00:00';
+  updateSessionUI();
+}
+
+function tickSession() {
+  if (!G_sess.running) return;
+  const total = G_sess.elapsed + Math.floor((Date.now() - G_sess.startedAt) / 1000);
+  const h = String(Math.floor(total / 3600)).padStart(2,'0');
+  const m = String(Math.floor((total % 3600) / 60)).padStart(2,'0');
+  const s = String(total % 60).padStart(2,'0');
+  document.getElementById('sessTimer').textContent = `${h}:${m}:${s}`;
+}
+
+// Called by moveCrm and updateCrmStatus every time a card moves
+function trackSessionMove(leadId, fromStatus, toStatus) {
+  if (!G_sess.running) return; // only count during active session
+  if (fromStatus === toStatus) return; // no change
+
+  // Mark lead as worked this session
+  G_sess.worked.add(leadId);
+
+  // Update outcome — track final state for this lead
+  const prev = G_sess.outcomes[leadId];
+
+  // Undo previous outcome count if lead had one
+  if (prev === 'interested') G_sess.interested = Math.max(0, G_sess.interested - 1);
+  if (prev === 'lost') G_sess.lost = Math.max(0, G_sess.lost - 1);
+
+  // Apply new outcome
+  if (toStatus === 'interested') {
+    G_sess.interested++;
+    G_sess.outcomes[leadId] = 'interested';
+  } else if (toStatus === 'lost') {
+    G_sess.lost++;
+    G_sess.outcomes[leadId] = 'lost';
+  } else {
+    // moved back to new/contacted — clear outcome for this lead
+    delete G_sess.outcomes[leadId];
+  }
+
+  persistSession();
+  updateSessionUI();
+}
+
+function updateSessionUI() {
+  const worked = G_sess.worked.size;
+  const interested = G_sess.interested;
+  const lost = G_sess.lost;
+  const outcomes = interested + lost;
+  const rate = outcomes > 0 ? Math.round((interested / outcomes) * 100) : 0;
+  const wl = lost > 0 ? (interested / lost).toFixed(1) : interested > 0 ? '∞' : '—';
+
+  const el = id => document.getElementById(id);
+  if (el('sessWorked')) el('sessWorked').textContent = worked;
+  if (el('sessInterested')) el('sessInterested').textContent = interested;
+  if (el('sessLost')) el('sessLost').textContent = lost;
+  if (el('sessRate')) el('sessRate').textContent = rate + '%';
+  if (el('sessWL')) el('sessWL').textContent = wl;
+
+  // Color rate green/yellow/red
+  if (el('sessRate')) {
+    el('sessRate').style.color = rate >= 30 ? 'var(--green)' : rate >= 15 ? 'var(--yellow)' : 'var(--red)';
+  }
+
+  drawSessionChart(interested, lost);
+}
+
+function drawSessionChart(interested, lost) {
+  const canvas = document.getElementById('sessChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const cx = w/2, cy = h/2, r = 28, inner = 17;
+  ctx.clearRect(0, 0, w, h);
+
+  const total = interested + lost;
+
+  if (total === 0) {
+    // Empty ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 11;
+    ctx.stroke();
+    // Center text
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.font = 'bold 10px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('0%', cx, cy);
+    return;
+  }
+
+  const intAngle = (interested / total) * Math.PI * 2;
+  const start = -Math.PI / 2;
+
+  // Interested arc (yellow/green)
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, start, start + intAngle);
+  ctx.strokeStyle = '#43e0a0';
+  ctx.lineWidth = 11;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Lost arc (red)
+  if (lost > 0) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, start + intAngle, start + Math.PI * 2);
+    ctx.strokeStyle = '#f25c5c';
+    ctx.lineWidth = 11;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+
+  // Center rate text
+  const rate = Math.round((interested / total) * 100);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 12px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(rate + '%', cx, cy);
+}
+
+// Restore session state on load
+function initSession() {
+  if (G_sess.elapsed > 0 || G_sess.worked.size > 0) {
+    document.getElementById('sessPanel').style.display = 'block';
+    document.getElementById('sessResetBtn').style.display = 'inline-flex';
+    updateSessionUI();
+    // Restore timer display
+    const total = G_sess.elapsed;
+    const h = String(Math.floor(total / 3600)).padStart(2,'0');
+    const m = String(Math.floor((total % 3600) / 60)).padStart(2,'0');
+    const s = String(total % 60).padStart(2,'0');
+    document.getElementById('sessTimer').textContent = `${h}:${m}:${s}`;
+  }
+  // If session was running when page closed, auto-resume
+  if (G_sess.running) {
+    G_sess.running = false; // reset so startSession works
+    startSession();
+    document.getElementById('sessStatus').textContent = 'RESUMED';
+  }
+}
+
 // ── CRM ────────────────────────────────────────────────────────────────────
 const CRM_STAGES=[
   {id:'new',label:'New',color:'var(--muted)'},
   {id:'contacted',label:'Contacted',color:'var(--accent)'},
   {id:'interested',label:'Interested',color:'var(--yellow)'},
-  {id:'closed',label:'Won 🎉',color:'var(--green)'},
   {id:'lost',label:'Lost',color:'var(--red)'}
 ];
 
@@ -1411,11 +1669,12 @@ function renderCrm(){
 
 function moveCrm(id,status){
   const l=G.saved.find(x=>x.id===id);
-  if(l){
-    l.crmStatus=status;
-    persistSaved();renderCrm();renderSaved();
-    if(status==='closed') autoImportClient(l);
-  }
+  if(!l) return;
+  const prevStatus = l.crmStatus || 'new';
+  l.crmStatus = status;
+  persistSaved(); renderCrm(); renderSaved();
+  // Hook session tracker
+  trackSessionMove(l.id, prevStatus, status);
 }
 
 function updateCrmStatus(){
@@ -1423,8 +1682,10 @@ function updateCrmStatus(){
   const status=document.getElementById('drCrmStatus').value;
   const saved=G.saved.find(x=>x.id===G.cur.id);
   if(saved){
-    saved.crmStatus=status;G.cur.crmStatus=status;persistSaved();renderCrm();renderSaved();
-    if(status==='closed') autoImportClient(saved);
+    const prevStatus = saved.crmStatus || 'new';
+    saved.crmStatus=status; G.cur.crmStatus=status;
+    persistSaved(); renderCrm(); renderSaved();
+    trackSessionMove(saved.id, prevStatus, status);
   }
 }
 
@@ -1560,7 +1821,7 @@ function showView(name,el){
   document.getElementById('view-'+name).classList.add('on');
   document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));
   if(el)el.classList.add('on');
-  if(name==='crm')renderCrm();
+  if(name==='crm'){renderCrm();initSession();}
   if(name==='saved')renderSaved();
   if(name==='account')loadUsage();
   if(name==='community')initChat();
