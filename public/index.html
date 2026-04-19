@@ -270,6 +270,8 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
 .topic-tag:hover{border-color:var(--accent);color:var(--accent)}
 
 .sess-live{animation:pulse-green 1.5s ease infinite}
+.btn-g{background:rgba(67,224,160,0.15);color:var(--green);border:1px solid rgba(67,224,160,0.3)}
+.btn-g:hover{background:rgba(67,224,160,0.25)}
 @keyframes pulse-green{0%,100%{opacity:1}50%{opacity:.6}}
 .kol{min-width:0}
 .call-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;cursor:pointer;transition:border-color .15s}
@@ -449,6 +451,7 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
       <div class="nav" id="nav-archive" onclick="showView('archive',this)"><span class="ic">🗄</span>Archive<span class="nb" id="archiveBadge">0</span></div>
       <div class="nav" id="nav-clients" onclick="showView('clients',this)"><span class="ic">🏆</span>Won Clients<span class="nb" id="clientsBadge">0</span></div>
       <div class="nav" id="nav-calls" onclick="showView('calls',this)"><span class="ic">📅</span>Upcoming Calls<span class="nb" id="callsBadge">0</span></div>
+      <div class="nav" id="nav-analytics" onclick="showView('analytics',this)"><span class="ic">📊</span>Analytics</div>
       <div class="slbl">Account</div>
       <div class="nav" id="nav-community" onclick="showView('community',this)"><span class="ic">💬</span>Community<span class="nb" id="onlineBadge">0</span></div>
       <div class="nav" id="nav-account" onclick="showView('account',this)"><span class="ic">👤</span>Account</div>
@@ -564,6 +567,7 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
               <button class="btn btn-p" id="sessStartBtn" onclick="startSession()" style="font-size:11px;padding:4px 12px">▶ Start Session</button>
               <button class="btn btn-o" id="sessStopBtn" onclick="stopSession()" style="font-size:11px;padding:4px 12px;display:none">⏸ Stop</button>
               <button class="btn btn-o" id="sessResetBtn" onclick="resetSession()" style="font-size:11px;padding:4px 12px;display:none">↺ Reset</button>
+              <button class="btn btn-g" id="sessSaveBtn" onclick="openSaveSessionModal()" style="font-size:11px;padding:4px 12px;display:none">💾 Save</button>
             </div>
           </div>
           <!-- SESSION TRACKER PANEL -->
@@ -576,7 +580,7 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
                 <div id="sessStatus" style="font-size:9px;font-family:var(--mono);color:var(--muted);margin-top:2px">STOPPED</div>
               </div>
               <!-- Metrics -->
-              <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
+              <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px">
                 <div style="background:var(--bg2);border-radius:7px;padding:.4rem .5rem;text-align:center">
                   <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:2px">Worked</div>
                   <div id="sessWorked" style="font-size:1.1rem;font-weight:700;font-family:var(--head);color:var(--text)">0</div>
@@ -588,6 +592,10 @@ tbody tr.high-opp{border-left:2px solid var(--yellow)}
                 <div style="background:var(--bg2);border-radius:7px;padding:.4rem .5rem;text-align:center">
                   <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:2px">Lost</div>
                   <div id="sessLost" style="font-size:1.1rem;font-weight:700;font-family:var(--head);color:var(--red)">0</div>
+                </div>
+                <div style="background:var(--bg2);border-radius:7px;padding:.4rem .5rem;text-align:center">
+                  <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:2px">Call Back</div>
+                  <div id="sessCallback" style="font-size:1.1rem;font-weight:700;font-family:var(--head);color:var(--orange)">0</div>
                 </div>
                 <div style="background:var(--bg2);border-radius:7px;padding:.4rem .5rem;text-align:center">
                   <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:2px">Interest Rate</div>
@@ -867,6 +875,96 @@ Would you be open to a 10-min call this week?
         </div>
       </div>
 
+      <!-- ANALYTICS -->
+      <div class="view" id="view-analytics">
+        <div class="spanel" style="padding-bottom:.8rem">
+          <div class="ptitle" style="margin-bottom:.4rem">Analytics</div>
+          <div style="font-size:12px;color:var(--muted)">Sales session history and performance tracking</div>
+        </div>
+        <div class="ra">
+          <!-- SUMMARY CARDS -->
+          <div id="analyticsEmpty" class="empty" style="display:none"><div style="font-size:2.5rem">📊</div><div class="et">No sessions saved yet</div><div class="es">Complete a dialing session in the CRM pipeline and save it to see analytics here.</div></div>
+          <div id="analyticsSummary" style="display:none">
+            <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.6rem">Overall Performance</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1.2rem">
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.7rem .8rem;text-align:center">
+                <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:3px">Sessions</div>
+                <div id="anTotalSess" style="font-size:1.4rem;font-weight:700;font-family:var(--head);color:var(--text)">0</div>
+              </div>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.7rem .8rem;text-align:center">
+                <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:3px">Leads Worked</div>
+                <div id="anTotalWorked" style="font-size:1.4rem;font-weight:700;font-family:var(--head);color:var(--text)">0</div>
+              </div>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.7rem .8rem;text-align:center">
+                <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:3px">Total Interested</div>
+                <div id="anTotalInt" style="font-size:1.4rem;font-weight:700;font-family:var(--head);color:var(--yellow)">0</div>
+              </div>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.7rem .8rem;text-align:center">
+                <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:3px">Total Lost</div>
+                <div id="anTotalLost" style="font-size:1.4rem;font-weight:700;font-family:var(--head);color:var(--red)">0</div>
+              </div>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.7rem .8rem;text-align:center">
+                <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:3px">Call Backs</div>
+                <div id="anTotalCb" style="font-size:1.4rem;font-weight:700;font-family:var(--head);color:var(--orange)">0</div>
+              </div>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.7rem .8rem;text-align:center">
+                <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:3px">Avg Interest Rate</div>
+                <div id="anAvgRate" style="font-size:1.4rem;font-weight:700;font-family:var(--head);color:var(--green)">0%</div>
+              </div>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.7rem .8rem;text-align:center">
+                <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:3px">Total Time Dialed</div>
+                <div id="anTotalTime" style="font-size:1.4rem;font-weight:700;font-family:var(--head);color:var(--accent)">0h 0m</div>
+              </div>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.7rem .8rem;text-align:center">
+                <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:3px">Avg Session</div>
+                <div id="anAvgDur" style="font-size:1.4rem;font-weight:700;font-family:var(--head);color:var(--accent)">—</div>
+              </div>
+            </div>
+            <!-- Charts row -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.2rem">
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.8rem">
+                <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:.6rem">Interest Rate by Session</div>
+                <canvas id="anLineChart" height="80"></canvas>
+              </div>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.8rem">
+                <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:.6rem">Outcomes Breakdown</div>
+                <canvas id="anBarChart" height="80"></canvas>
+              </div>
+            </div>
+            <!-- Session list -->
+            <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.6rem">Session History</div>
+            <div id="analyticsSessionList" style="display:flex;flex-direction:column;gap:8px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SAVE SESSION MODAL -->
+      <div class="mo" id="saveSessionMo">
+        <div class="modal" style="width:500px;max-width:95vw">
+          <div class="mt" id="saveSessionMoTitle">Save Session</div>
+          <div class="ms">Review your session stats and add notes before saving.</div>
+          <!-- Read-only stats preview -->
+          <div id="saveSessionStats" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.8rem;margin-bottom:.9rem;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center">
+            <div><div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase">Worked</div><div id="svWorked" style="font-weight:700;font-family:var(--head);font-size:1.1rem">0</div></div>
+            <div><div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase">Interested</div><div id="svInt" style="font-weight:700;font-family:var(--head);font-size:1.1rem;color:var(--yellow)">0</div></div>
+            <div><div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase">Lost</div><div id="svLost" style="font-weight:700;font-family:var(--head);font-size:1.1rem;color:var(--red)">0</div></div>
+            <div><div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase">Call Backs</div><div id="svCb" style="font-weight:700;font-family:var(--head);font-size:1.1rem;color:var(--orange)">0</div></div>
+            <div><div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase">Interest Rate</div><div id="svRate" style="font-weight:700;font-family:var(--head);font-size:1.1rem;color:var(--green)">0%</div></div>
+            <div><div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase">Duration</div><div id="svDur" style="font-weight:700;font-family:var(--head);font-size:1.1rem">—</div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.8rem">
+            <div class="fld"><label>Session Date</label><input id="svDate" type="date"></div>
+            <div class="fld"><label>Session Label (optional)</label><input id="svLabel" type="text" placeholder="e.g. Morning session..."></div>
+          </div>
+          <div class="fld" style="margin-bottom:.9rem"><label>Notes</label><textarea id="svNotes" style="min-height:60px" placeholder="What worked? Any observations..."></textarea></div>
+          <input type="hidden" id="svEditId">
+          <div class="mac">
+            <button class="btn btn-o" onclick="closeSaveSessionMo()">Cancel</button>
+            <button class="btn btn-p" onclick="saveSessionToHistory()">💾 Save Session</button>
+          </div>
+        </div>
+      </div>
+
       <!-- COMMUNITY -->
       <div class="view" id="view-community">
         <div class="chat-wrap">
@@ -941,7 +1039,7 @@ Would you be open to a 10-min call this week?
 <div class="ov" id="ov" onclick="closeDrawer()"></div>
 <div class="drawer" id="drawer">
   <div class="dh"><div><div class="dt" id="drT">—</div><div class="ds" id="drS">—</div></div><button class="cls" onclick="closeDrawer()">✕</button></div>
-  <div class="dsec"><div class="dst">CRM Status</div><select class="crm-select" id="drCrmStatus" onchange="updateCrmStatus()"><option value="new">New</option><option value="contacted">Contacted</option><option value="interested">Interested</option><option value="lost">Lost</option></select></div>
+  <div class="dsec"><div class="dst">CRM Status</div><select class="crm-select" id="drCrmStatus" onchange="updateCrmStatus()"><option value="new">New</option><option value="contacted">Contacted</option><option value="interested">Interested</option><option value="lost">Lost</option><option value="callback">Call Back Later</option></select></div>
   <div class="dsec"><div class="dst">Contact</div><div id="drC"></div>
     <div style="margin-top:8px">
       <div style="font-size:9px;font-family:var(--mono);color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px">Email address</div>
@@ -1439,12 +1537,13 @@ const SESSION_KEY = 'lg_session';
 // Session state — persisted to localStorage
 let G_sess = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null') || {
   running: false,
-  startedAt: null,      // timestamp when started
-  elapsed: 0,           // accumulated seconds before last stop
-  worked: new Set(),    // unique lead IDs touched this session
-  outcomes: {},         // { leadId: 'interested'|'lost'|'contacted'|'new' }
+  startedAt: null,
+  elapsed: 0,
+  worked: new Set(),
+  outcomes: {},
   interested: 0,
-  lost: 0
+  lost: 0,
+  callback: 0
 };
 // Restore Set from array (JSON doesn't preserve Sets)
 if (Array.isArray(G_sess.worked)) G_sess.worked = new Set(G_sess.worked);
@@ -1466,6 +1565,7 @@ function startSession() {
   document.getElementById('sessStartBtn').style.display = 'none';
   document.getElementById('sessStopBtn').style.display = 'inline-flex';
   document.getElementById('sessResetBtn').style.display = 'inline-flex';
+  document.getElementById('sessSaveBtn').style.display = 'none'; // shown when data exists
   document.getElementById('sessStatus').textContent = 'LIVE';
   document.getElementById('sessStatus').style.color = 'var(--green)';
 }
@@ -1481,6 +1581,7 @@ function stopSession() {
   document.getElementById('sessStartBtn').style.display = 'inline-flex';
   document.getElementById('sessStopBtn').style.display = 'none';
   document.getElementById('sessStatus').textContent = 'PAUSED';
+  if (G_sess.worked.size > 0) document.getElementById('sessSaveBtn').style.display = 'inline-flex';
   document.getElementById('sessStatus').style.color = 'var(--muted)';
 }
 
@@ -1508,28 +1609,30 @@ function tickSession() {
 
 // Called by moveCrm and updateCrmStatus every time a card moves
 function trackSessionMove(leadId, fromStatus, toStatus) {
-  if (!G_sess.running) return; // only count during active session
-  if (fromStatus === toStatus) return; // no change
+  if (!G_sess.running) return;
+  if (fromStatus === toStatus) return;
 
-  // Mark lead as worked this session
   G_sess.worked.add(leadId);
 
-  // Update outcome — track final state for this lead
   const prev = G_sess.outcomes[leadId];
 
-  // Undo previous outcome count if lead had one
+  // Undo previous outcome
   if (prev === 'interested') G_sess.interested = Math.max(0, G_sess.interested - 1);
-  if (prev === 'lost') G_sess.lost = Math.max(0, G_sess.lost - 1);
+  else if (prev === 'lost') G_sess.lost = Math.max(0, G_sess.lost - 1);
+  else if (prev === 'callback') G_sess.callback = Math.max(0, G_sess.callback - 1);
 
-  // Apply new outcome
+  // Apply new outcome — callback is neutral (tracked separately, not in W/L)
   if (toStatus === 'interested') {
     G_sess.interested++;
     G_sess.outcomes[leadId] = 'interested';
   } else if (toStatus === 'lost') {
     G_sess.lost++;
     G_sess.outcomes[leadId] = 'lost';
+  } else if (toStatus === 'callback') {
+    G_sess.callback++;
+    G_sess.outcomes[leadId] = 'callback';
   } else {
-    // moved back to new/contacted — clear outcome for this lead
+    // back to new/contacted — clear outcome
     delete G_sess.outcomes[leadId];
   }
 
@@ -1541,7 +1644,8 @@ function updateSessionUI() {
   const worked = G_sess.worked.size;
   const interested = G_sess.interested;
   const lost = G_sess.lost;
-  const outcomes = interested + lost;
+  const callback = G_sess.callback || 0;
+  const outcomes = interested + lost; // callback is neutral — excluded from rate
   const rate = outcomes > 0 ? Math.round((interested / outcomes) * 100) : 0;
   const wl = lost > 0 ? (interested / lost).toFixed(1) : interested > 0 ? '∞' : '—';
 
@@ -1549,18 +1653,18 @@ function updateSessionUI() {
   if (el('sessWorked')) el('sessWorked').textContent = worked;
   if (el('sessInterested')) el('sessInterested').textContent = interested;
   if (el('sessLost')) el('sessLost').textContent = lost;
-  if (el('sessRate')) el('sessRate').textContent = rate + '%';
+  if (el('sessCallback')) el('sessCallback').textContent = callback;
+  if (el('sessRate')) { el('sessRate').textContent = rate + '%'; el('sessRate').style.color = rate >= 30 ? 'var(--green)' : rate >= 15 ? 'var(--yellow)' : 'var(--red)'; }
   if (el('sessWL')) el('sessWL').textContent = wl;
 
-  // Color rate green/yellow/red
-  if (el('sessRate')) {
-    el('sessRate').style.color = rate >= 30 ? 'var(--green)' : rate >= 15 ? 'var(--yellow)' : 'var(--red)';
-  }
+  // Show Save button once there's data
+  const hasSaveBtn = el('sessSaveBtn');
+  if (hasSaveBtn) hasSaveBtn.style.display = (worked > 0) ? 'inline-flex' : 'none';
 
-  drawSessionChart(interested, lost);
+  drawSessionChart(interested, lost, callback);
 }
 
-function drawSessionChart(interested, lost) {
+function drawSessionChart(interested, lost, callback=0) {
   const canvas = document.getElementById('sessChart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
@@ -1568,51 +1672,38 @@ function drawSessionChart(interested, lost) {
   const cx = w/2, cy = h/2, r = 28, inner = 17;
   ctx.clearRect(0, 0, w, h);
 
-  const total = interested + lost;
+  const total = interested + lost + callback;
 
   if (total === 0) {
-    // Empty ring
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-    ctx.lineWidth = 11;
-    ctx.stroke();
-    // Center text
-    ctx.fillStyle = 'rgba(255,255,255,0.2)';
-    ctx.font = 'bold 10px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('0%', cx, cy);
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 11; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = 'bold 10px monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('0%', cx, cy);
     return;
   }
 
-  const intAngle = (interested / total) * Math.PI * 2;
   const start = -Math.PI / 2;
+  const intAngle = (interested / total) * Math.PI * 2;
+  const lostAngle = (lost / total) * Math.PI * 2;
+  const cbAngle = (callback / total) * Math.PI * 2;
 
-  // Interested arc (yellow/green)
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, start, start + intAngle);
-  ctx.strokeStyle = '#43e0a0';
-  ctx.lineWidth = 11;
-  ctx.lineCap = 'round';
-  ctx.stroke();
-
-  // Lost arc (red)
+  if (interested > 0) {
+    ctx.beginPath(); ctx.arc(cx, cy, r, start, start + intAngle);
+    ctx.strokeStyle = '#43e0a0'; ctx.lineWidth = 11; ctx.lineCap = 'butt'; ctx.stroke();
+  }
   if (lost > 0) {
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, start + intAngle, start + Math.PI * 2);
-    ctx.strokeStyle = '#f25c5c';
-    ctx.lineWidth = 11;
-    ctx.lineCap = 'round';
-    ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, r, start + intAngle, start + intAngle + lostAngle);
+    ctx.strokeStyle = '#f25c5c'; ctx.lineWidth = 11; ctx.lineCap = 'butt'; ctx.stroke();
+  }
+  if (callback > 0) {
+    ctx.beginPath(); ctx.arc(cx, cy, r, start + intAngle + lostAngle, start + Math.PI * 2);
+    ctx.strokeStyle = '#f5944a'; ctx.lineWidth = 11; ctx.lineCap = 'butt'; ctx.stroke();
   }
 
-  // Center rate text
-  const rate = Math.round((interested / total) * 100);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 12px monospace';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  const outcomes = interested + lost;
+  const rate = outcomes > 0 ? Math.round((interested / outcomes) * 100) : 0;
+  ctx.fillStyle = '#ffffff'; ctx.font = 'bold 12px monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(rate + '%', cx, cy);
 }
 
@@ -1642,7 +1733,8 @@ const CRM_STAGES=[
   {id:'new',label:'New',color:'var(--muted)'},
   {id:'contacted',label:'Contacted',color:'var(--accent)'},
   {id:'interested',label:'Interested',color:'var(--yellow)'},
-  {id:'lost',label:'Lost',color:'var(--red)'}
+  {id:'lost',label:'Lost',color:'var(--red)'},
+  {id:'callback',label:'Call Back Later',color:'var(--orange)'}
 ];
 
 function renderCrm(){
@@ -1827,6 +1919,7 @@ function showView(name,el){
   if(name==='community')initChat();
   if(name==='clients'){renderClients();updateClientsBadge();}
   if(name==='calls'){renderCalls();updateCallsBadge();}
+  if(name==='analytics'){renderAnalytics();}
   if(name==='archive')renderArchive();
 }
 
@@ -2489,6 +2582,275 @@ function quickUpdateCallStatus(id) {
   persistCalls();
   renderCalls();
   showToast('Status → ' + STATUS_LABEL[call.status],'i');
+}
+
+// ── ANALYTICS & SESSION SAVING ────────────────────────────────────────────
+const ANALYTICS_KEY = 'lg_analytics';
+let G_analytics = JSON.parse(localStorage.getItem(ANALYTICS_KEY) || '[]');
+
+function persistAnalytics() {
+  localStorage.setItem(ANALYTICS_KEY, JSON.stringify(G_analytics));
+}
+
+function fmtDuration(secs) {
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+function fmtDurationFull(secs) {
+  const h = String(Math.floor(secs/3600)).padStart(2,'0');
+  const m = String(Math.floor((secs%3600)/60)).padStart(2,'0');
+  const s = String(secs%60).padStart(2,'0');
+  return `${h}:${m}:${s}`;
+}
+
+// Open save modal — pre-fill with current session data
+function openSaveSessionModal(editId) {
+  const today = new Date().toISOString().slice(0,10);
+  const mo = document.getElementById('saveSessionMo');
+  const title = document.getElementById('saveSessionMoTitle');
+
+  if (editId) {
+    // Edit existing session
+    const sess = G_analytics.find(s=>s.id===editId);
+    if (!sess) return;
+    title.textContent = 'Edit Session';
+    document.getElementById('svDate').value = sess.date || today;
+    document.getElementById('svLabel').value = sess.label || '';
+    document.getElementById('svNotes').value = sess.notes || '';
+    document.getElementById('svEditId').value = editId;
+    // Fill preview stats from saved
+    document.getElementById('svWorked').textContent = sess.worked;
+    document.getElementById('svInt').textContent = sess.interested;
+    document.getElementById('svLost').textContent = sess.lost;
+    document.getElementById('svCb').textContent = sess.callback || 0;
+    document.getElementById('svRate').textContent = sess.rate + '%';
+    document.getElementById('svDur').textContent = fmtDuration(sess.duration);
+  } else {
+    // Save current live session
+    title.textContent = 'Save Session';
+    const worked = G_sess.worked.size;
+    const interested = G_sess.interested;
+    const lost = G_sess.lost;
+    const callback = G_sess.callback || 0;
+    const outcomes = interested + lost;
+    const rate = outcomes > 0 ? Math.round((interested / outcomes) * 100) : 0;
+    const duration = G_sess.elapsed + (G_sess.running && G_sess.startedAt ? Math.floor((Date.now() - G_sess.startedAt) / 1000) : 0);
+
+    document.getElementById('svDate').value = today;
+    document.getElementById('svLabel').value = '';
+    document.getElementById('svNotes').value = '';
+    document.getElementById('svEditId').value = '';
+    document.getElementById('svWorked').textContent = worked;
+    document.getElementById('svInt').textContent = interested;
+    document.getElementById('svLost').textContent = lost;
+    document.getElementById('svCb').textContent = callback;
+    document.getElementById('svRate').textContent = rate + '%';
+    document.getElementById('svDur').textContent = fmtDuration(duration);
+  }
+
+  mo.classList.add('on');
+}
+
+function closeSaveSessionMo() {
+  document.getElementById('saveSessionMo').classList.remove('on');
+}
+
+function saveSessionToHistory() {
+  const editId = document.getElementById('svEditId').value;
+  const date = document.getElementById('svDate').value;
+  const label = document.getElementById('svLabel').value.trim();
+  const notes = document.getElementById('svNotes').value.trim();
+
+  if (editId) {
+    // Update existing session
+    const idx = G_analytics.findIndex(s=>s.id===editId);
+    if (idx >= 0) {
+      G_analytics[idx].date = date;
+      G_analytics[idx].label = label;
+      G_analytics[idx].notes = notes;
+    }
+    persistAnalytics();
+    closeSaveSessionMo();
+    renderAnalytics();
+    showToast('Session updated','s');
+    return;
+  }
+
+  // Save new session from current G_sess
+  const worked = G_sess.worked.size;
+  const interested = G_sess.interested;
+  const lost = G_sess.lost;
+  const callback = G_sess.callback || 0;
+  const outcomes = interested + lost;
+  const rate = outcomes > 0 ? Math.round((interested / outcomes) * 100) : 0;
+  const duration = G_sess.elapsed + (G_sess.running && G_sess.startedAt ? Math.floor((Date.now() - G_sess.startedAt) / 1000) : 0);
+  const wl = lost > 0 ? parseFloat((interested / lost).toFixed(2)) : interested > 0 ? null : null;
+
+  const session = {
+    id: 'sess_' + Date.now(),
+    date: date || new Date().toISOString().slice(0,10),
+    label,
+    notes,
+    worked,
+    interested,
+    lost,
+    callback,
+    rate,
+    wl,
+    duration,
+    savedAt: Date.now()
+  };
+
+  G_analytics.unshift(session); // newest first
+  persistAnalytics();
+  closeSaveSessionMo();
+  renderAnalytics();
+  showToast('Session saved to Analytics','s');
+
+  // Optionally auto-reset after save
+  // resetSession();
+}
+
+function deleteAnalyticsSession(id) {
+  G_analytics = G_analytics.filter(s=>s.id!==id);
+  persistAnalytics();
+  renderAnalytics();
+  showToast('Session deleted','i');
+}
+
+function renderAnalytics() {
+  const empty = document.getElementById('analyticsEmpty');
+  const summary = document.getElementById('analyticsSummary');
+  if (!empty || !summary) return;
+
+  if (!G_analytics.length) {
+    empty.style.display = 'flex';
+    summary.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  summary.style.display = 'block';
+
+  // Calculate totals
+  const totalSess = G_analytics.length;
+  const totalWorked = G_analytics.reduce((a,s)=>a+s.worked,0);
+  const totalInt = G_analytics.reduce((a,s)=>a+s.interested,0);
+  const totalLost = G_analytics.reduce((a,s)=>a+s.lost,0);
+  const totalCb = G_analytics.reduce((a,s)=>a+(s.callback||0),0);
+  const totalDur = G_analytics.reduce((a,s)=>a+s.duration,0);
+  const avgRate = totalSess > 0 ? Math.round(G_analytics.reduce((a,s)=>a+s.rate,0)/totalSess) : 0;
+  const avgDurSec = totalSess > 0 ? Math.round(totalDur/totalSess) : 0;
+  const totalH = Math.floor(totalDur/3600);
+  const totalM = Math.floor((totalDur%3600)/60);
+
+  const el = id => document.getElementById(id);
+  if (el('anTotalSess')) el('anTotalSess').textContent = totalSess;
+  if (el('anTotalWorked')) el('anTotalWorked').textContent = totalWorked;
+  if (el('anTotalInt')) el('anTotalInt').textContent = totalInt;
+  if (el('anTotalLost')) el('anTotalLost').textContent = totalLost;
+  if (el('anTotalCb')) el('anTotalCb').textContent = totalCb;
+  if (el('anAvgRate')) { el('anAvgRate').textContent = avgRate+'%'; el('anAvgRate').style.color = avgRate>=30?'var(--green)':avgRate>=15?'var(--yellow)':'var(--red)'; }
+  if (el('anTotalTime')) el('anTotalTime').textContent = `${totalH}h ${totalM}m`;
+  if (el('anAvgDur')) el('anAvgDur').textContent = fmtDuration(avgDurSec);
+
+  // Draw charts
+  drawAnalyticsCharts();
+
+  // Render session list
+  const list = el('analyticsSessionList');
+  if (!list) return;
+  list.innerHTML = G_analytics.map(s => {
+    const outcomes = s.interested + s.lost;
+    return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+            <strong style="font-size:13px">${s.label || 'Session'}</strong>
+            <span style="font-size:11px;color:var(--muted);font-family:var(--mono)">${s.date}</span>
+            <span style="font-size:10px;background:var(--accent-dim);color:var(--accent);border-radius:999px;padding:1px 8px;font-family:var(--mono)">${s.rate}% interest rate</span>
+          </div>
+          <div style="display:flex;gap:14px;font-size:11px;color:var(--muted);flex-wrap:wrap">
+            <span>⏱ ${fmtDuration(s.duration)}</span>
+            <span>👥 ${s.worked} worked</span>
+            <span style="color:var(--yellow)">✓ ${s.interested} interested</span>
+            <span style="color:var(--red)">✗ ${s.lost} lost</span>
+            <span style="color:var(--orange)">↩ ${s.callback||0} callback</span>
+          </div>
+          ${s.notes ? `<div style="font-size:11px;color:var(--muted);margin-top:5px;font-style:italic">${esc(s.notes.slice(0,100))}${s.notes.length>100?'…':''}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn btn-o" style="padding:3px 9px;font-size:10px" onclick="openSaveSessionModal('${s.id}')">Edit</button>
+          <button class="btn btn-d" style="padding:3px 9px;font-size:10px" onclick="deleteAnalyticsSession('${s.id}')">Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function drawAnalyticsCharts() {
+  const sessions = [...G_analytics].reverse(); // oldest first for trend
+
+  // Line chart — interest rate by session
+  const lineCanvas = document.getElementById('anLineChart');
+  if (lineCanvas && sessions.length) {
+    const ctx = lineCanvas.getContext('2d');
+    const W = lineCanvas.offsetWidth || 300;
+    lineCanvas.width = W;
+    ctx.clearRect(0,0,W,80);
+    const rates = sessions.map(s=>s.rate);
+    const maxR = Math.max(...rates, 100);
+    const pts = rates.map((r,i) => ({ x: sessions.length === 1 ? W/2 : (i/(sessions.length-1))*(W-20)+10, y: 70 - (r/maxR)*60 }));
+
+    // Grid line at 30%
+    const y30 = 70 - (30/maxR)*60;
+    ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(0,y30); ctx.lineTo(W,y30); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Line
+    ctx.strokeStyle='#4f8ef7'; ctx.lineWidth=2; ctx.lineJoin='round';
+    ctx.beginPath(); pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
+
+    // Dots
+    pts.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fillStyle='#4f8ef7'; ctx.fill(); });
+
+    // Labels
+    ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.font='9px monospace'; ctx.textAlign='center';
+    if (sessions.length <= 8) sessions.forEach((s,i)=>ctx.fillText(s.rate+'%', pts[i].x, 78));
+  }
+
+  // Bar chart — interested vs lost per session
+  const barCanvas = document.getElementById('anBarChart');
+  if (barCanvas && sessions.length) {
+    const ctx = barCanvas.getContext('2d');
+    const W = barCanvas.offsetWidth || 300;
+    barCanvas.width = W;
+    ctx.clearRect(0,0,W,80);
+    const maxVal = Math.max(...sessions.map(s=>Math.max(s.interested,s.lost,s.callback||0,1)));
+    const barW = Math.max(4, Math.floor((W - sessions.length*4) / (sessions.length*2+sessions.length)));
+    const groupW = (W-20)/sessions.length;
+
+    sessions.forEach((s,i) => {
+      const x = 10 + i*groupW;
+      const intH = (s.interested/maxVal)*60;
+      const lostH = (s.lost/maxVal)*60;
+      const cbH = ((s.callback||0)/maxVal)*60;
+      ctx.fillStyle='#43e0a0'; ctx.fillRect(x, 70-intH, barW, intH);
+      ctx.fillStyle='#f25c5c'; ctx.fillRect(x+barW+2, 70-lostH, barW, lostH);
+      if (s.callback) { ctx.fillStyle='#f5944a'; ctx.fillRect(x+barW*2+4, 70-cbH, barW, cbH); }
+    });
+
+    // Legend
+    ctx.fillStyle='#43e0a0'; ctx.fillRect(W-90,4,8,8);
+    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font='8px monospace'; ctx.textAlign='left'; ctx.fillText('Int',W-79,11);
+    ctx.fillStyle='#f25c5c'; ctx.fillRect(W-55,4,8,8);
+    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.fillText('Lost',W-44,11);
+  }
 }
 
 // ── CLIENTS ───────────────────────────────────────────────────────────────
