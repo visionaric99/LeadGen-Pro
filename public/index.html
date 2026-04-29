@@ -965,6 +965,19 @@ Would you be open to a 10-min call this week?
         </div>
       </div>
 
+      <!-- WEBSITE PROMPT MODAL -->
+      <div class="mo" id="websitePromptMo">
+        <div class="modal" style="width:520px;max-width:95vw">
+          <div class="mt">⚡ Website Builder Prompt</div>
+          <div class="ms">Copy and paste this into your website builder or AI tool.</div>
+          <div id="websitePromptText" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:1rem 1.1rem;font-size:13px;line-height:1.7;color:var(--text);white-space:pre-wrap;margin-bottom:1rem;font-family:var(--body)"></div>
+          <div class="mac">
+            <button class="btn btn-o" onclick="document.getElementById('websitePromptMo').classList.remove('on')">Close</button>
+            <button class="btn btn-p" onclick="copyWebsitePrompt()">📋 Copy Prompt</button>
+          </div>
+        </div>
+      </div>
+
       <!-- COMMUNITY -->
       <div class="view" id="view-community">
         <div class="chat-wrap">
@@ -1811,6 +1824,7 @@ function renderCrm(){
               ${CRM_STAGES.filter(s=>s.id!==stage.id).map(s=>`
                 <button class="btn btn-o" style="padding:2px 6px;font-size:10px;margin-bottom:2px" onclick="event.stopPropagation();moveCrm('${esc(l.id)}','${s.id}')">${s.label}</button>`).join('')}
               ${stage.id==='lost'?`<button class="btn btn-d" style="padding:2px 6px;font-size:10px;margin-bottom:2px;margin-top:4px;width:100%" onclick="event.stopPropagation();archiveLead('${esc(l.id)}','saved')">🗄 Archive</button>`:''}
+              ${stage.id==='interested'?`<button class="btn btn-g" style="padding:2px 6px;font-size:10px;margin-bottom:2px;margin-top:4px;width:100%" onclick="event.stopPropagation();openWebsitePrompt('${esc(l.id)}')">⚡ Website Prompt</button>`:''}
             </div>
           </div>`).join('')}
       </div>`;
@@ -3076,6 +3090,40 @@ function autoImportClient(lead) {
   });
   persistClients();
   showToast(lead.name + ' added to Won Clients','s');
+}
+
+// ── WEBSITE PROMPT GENERATOR ──────────────────────────────────────────────
+function openWebsitePrompt(leadId) {
+  const lead = G.saved.find(l => l.id === leadId);
+  if (!lead) return;
+
+  const name = lead.name || 'this business';
+  const type = (lead.cat || 'local business').toLowerCase();
+  const city = [lead.city, lead.state].filter(Boolean).join(', ') || 'their area';
+  const phone = lead.phone || '[add phone number]';
+  const website = lead.website;
+
+  const websiteLine = website
+    ? 'They currently have an existing site at ' + website + ' — use it as a reference for their branding or services if helpful, but the new site should be a significant upgrade.'
+    : 'They currently do not have a website, so this will be their first online presence — keep it clean, modern, and mobile-friendly.';
+
+  const prompt = 'Build me a professional website for ' + name + ', a ' + type + ' located in ' + city + '. '
+    + 'The site should clearly showcase their services, establish trust with potential customers, and make it easy for people to get in touch. '
+    + 'Their phone number is ' + phone + ' — make sure it is prominently displayed on the homepage and contact section.\n\n'
+    + websiteLine + '\n\n'
+    + 'Include a homepage, about section, services section, and a contact form or call-to-action button.';
+
+  document.getElementById('websitePromptText').textContent = prompt;
+  document.getElementById('websitePromptMo').classList.add('on');
+  window._currentPrompt = prompt;
+}
+
+function copyWebsitePrompt() {
+  const text = window._currentPrompt;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Prompt copied!', 's');
+  });
 }
 
 let tt;
