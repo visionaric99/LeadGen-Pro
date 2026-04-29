@@ -1547,6 +1547,8 @@ let G_sess = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null') || {
 };
 // Restore Set from array (JSON doesn't preserve Sets)
 if (Array.isArray(G_sess.worked)) G_sess.worked = new Set(G_sess.worked);
+// Backfill callback field for sessions saved before it was added
+if (typeof G_sess.callback === 'undefined') G_sess.callback = 0;
 
 let sessInterval = null;
 
@@ -1558,8 +1560,10 @@ function persistSession() {
 function startSession() {
   if (G_sess.running) return;
   G_sess.running = true;
-  G_sess.startedAt = Date.now();
+  G_sess.startedAt = Date.now(); // fresh start timestamp
+  if (typeof G_sess.callback === 'undefined') G_sess.callback = 0; // ensure field exists
   persistSession();
+  if (sessInterval) clearInterval(sessInterval); // clear any stale interval
   sessInterval = setInterval(tickSession, 1000);
   document.getElementById('sessPanel').style.display = 'block';
   document.getElementById('sessStartBtn').style.display = 'none';
@@ -1588,7 +1592,7 @@ function stopSession() {
 function resetSession() {
   clearInterval(sessInterval);
   sessInterval = null;
-  G_sess = { running: false, startedAt: null, elapsed: 0, worked: new Set(), outcomes: {}, interested: 0, lost: 0 };
+  G_sess = { running: false, startedAt: null, elapsed: 0, worked: new Set(), outcomes: {}, interested: 0, lost: 0, callback: 0 };
   persistSession();
   document.getElementById('sessPanel').style.display = 'none';
   document.getElementById('sessStartBtn').style.display = 'inline-flex';
@@ -1707,24 +1711,78 @@ function drawSessionChart(interested, lost, callback=0) {
   ctx.fillText(rate + '%', cx, cy);
 }
 
-// Restore session state on load
-function initSession() {
-  if (G_sess.elapsed > 0 || G_sess.worked.size > 0) {
-    document.getElementById('sessPanel').style.display = 'block';
-    document.getElementById('sessResetBtn').style.display = 'inline-flex';
-    updateSessionUI();
-    // Restore timer display
+// Called every time CRM tab is opened — only refreshes display, never touches interval
+function syncSessionUI() {
+  if (typeof G_sess.callback === 'undefined') G_sess.callback = 0;
+  if (!G_sess.running && G_sess.elapsed === 0 && G_sess.worked.size === 0) return; // nothing to show
+
+  document.getElementById('sessPanel').style.display = 'block';
+  document.getElementById('sessResetBtn').style.display = 'inline-flex';
+
+  if (G_sess.running) {
+    // Session is live — interval already running globally, just sync buttons + display
+    tickSession(); // refresh timer display immediately
+    document.getElementById('sessStartBtn').style.display = 'none';
+    document.getElementById('sessStopBtn').style.display = 'inline-flex';
+    document.getElementById('sessSaveBtn').style.display = G_sess.worked.size > 0 ? 'inline-flex' : 'none';
+    document.getElementById('sessStatus').textContent = 'LIVE';
+    document.getElementById('sessStatus').style.color = 'var(--green)';
+  } else {
+    // Session paused — show frozen elapsed time
     const total = G_sess.elapsed;
     const h = String(Math.floor(total / 3600)).padStart(2,'0');
     const m = String(Math.floor((total % 3600) / 60)).padStart(2,'0');
     const s = String(total % 60).padStart(2,'0');
     document.getElementById('sessTimer').textContent = `${h}:${m}:${s}`;
+    document.getElementById('sessStartBtn').style.display = 'inline-flex';
+    document.getElementById('sessStopBtn').style.display = 'none';
+    if (G_sess.worked.size > 0) document.getElementById('sessSaveBtn').style.display = 'inline-flex';
+    document.getElementById('sessStatus').textContent = 'PAUSED';
+    document.getElementById('sessStatus').style.color = 'var(--muted)';
   }
-  // If session was running when page closed, auto-resume
+  updateSessionUI();
+}
+
+// Restore session state on load
+function initSession() {
+  // Ensure callback field exists for sessions saved before it was added
+  if (typeof G_sess.callback === 'undefined') G_sess.callback = 0;
+
+  // Show panel if there is any session data
+  if (G_sess.elapsed > 0 || G_sess.worked.size > 0 || G_sess.running) {
+    document.getElementById('sessPanel').style.display = 'block';
+    document.getElementById('sessResetBtn').style.display = 'inline-flex';
+    updateSessionUI();
+  }
+
   if (G_sess.running) {
-    G_sess.running = false; // reset so startSession works
-    startSession();
-    document.getElementById('sessStatus').textContent = 'RESUMED';
+    // Session is already running — just reconnect the interval
+    // Do NOT reset startedAt. The existing startedAt timestamp is correct.
+    // Clear any stale interval first, then restart ticking
+    if (sessInterval) clearInterval(sessInterval);
+    sessInterval = setInterval(tickSession, 1000);
+    tickSession(); // update display immediately
+
+    // Restore button states
+    document.getElementById('sessPanel').style.display = 'block';
+    document.getElementById('sessStartBtn').style.display = 'none';
+    document.getElementById('sessStopBtn').style.display = 'inline-flex';
+    document.getElementById('sessResetBtn').style.display = 'inline-flex';
+    document.getElementById('sessSaveBtn').style.display = G_sess.worked.size > 0 ? 'inline-flex' : 'none';
+    document.getElementById('sessStatus').textContent = 'LIVE';
+    document.getElementById('sessStatus').style.color = 'var(--green)';
+  } else if (G_sess.elapsed > 0 || G_sess.worked.size > 0) {
+    // Session stopped — show final elapsed time
+    const total = G_sess.elapsed;
+    const h = String(Math.floor(total / 3600)).padStart(2,'0');
+    const m = String(Math.floor((total % 3600) / 60)).padStart(2,'0');
+    const s = String(total % 60).padStart(2,'0');
+    document.getElementById('sessTimer').textContent = `${h}:${m}:${s}`;
+    document.getElementById('sessStartBtn').style.display = 'inline-flex';
+    document.getElementById('sessStopBtn').style.display = 'none';
+    if (G_sess.worked.size > 0) document.getElementById('sessSaveBtn').style.display = 'inline-flex';
+    document.getElementById('sessStatus').textContent = 'PAUSED';
+    document.getElementById('sessStatus').style.color = 'var(--muted)';
   }
 }
 
@@ -1913,7 +1971,7 @@ function showView(name,el){
   document.getElementById('view-'+name).classList.add('on');
   document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));
   if(el)el.classList.add('on');
-  if(name==='crm'){renderCrm();initSession();}
+  if(name==='crm'){renderCrm();syncSessionUI();}
   if(name==='saved')renderSaved();
   if(name==='account')loadUsage();
   if(name==='community')initChat();
