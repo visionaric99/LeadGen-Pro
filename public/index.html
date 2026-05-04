@@ -2574,11 +2574,10 @@ function deleteCallEntry() {
 
 function renderCalls() {
   const today = new Date(); today.setHours(0,0,0,0);
-  const in7 = new Date(today); in7.setDate(in7.getDate()+7);
-
-  // Get calls in next 7 days, sorted by date+time
+  // Show ALL calls that are not completed/cancelled, sorted chronologically
+  // Completed/cancelled calls stay visible until manually deleted
   const calls = G.calls
-    .filter(c => { const d=new Date(c.date); d.setHours(0,0,0,0); return d>=today && d<=in7; })
+    .filter(c => c.status !== 'completed' && c.status !== 'cancelled')
     .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
 
   const emptyEl = document.getElementById('callsEmpty');
@@ -2639,10 +2638,9 @@ function renderCalls() {
     </div>`;
   }).join('');
 
-  // Update week label
-  const endDate = new Date(in7); endDate.setDate(endDate.getDate()-1);
+  // Update label
   document.getElementById('callsWeekLabel').textContent =
-    `${monthNames[today.getMonth()]} ${today.getDate()} – ${monthNames[endDate.getMonth()]} ${endDate.getDate()} · ${calls.length} call${calls.length!==1?'s':''}`;
+    `${calls.length} scheduled call${calls.length!==1?'s':''} · Completed and cancelled calls are hidden`;
 }
 
 function quickUpdateCallStatus(id) {
